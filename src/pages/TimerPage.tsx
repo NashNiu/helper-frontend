@@ -10,6 +10,7 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
   useEffect(() => {
     if (status === 'done') {
       setDoneMsg(`「${timer.name}」计时结束！`);
+      new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(() => {});
     }
   }, [status, timer.name]);
 
