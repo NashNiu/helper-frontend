@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { timerApi, Timer } from '../api/timer';
 import { useTimer } from '../hooks/useTimer';
 import NotificationToast from '../components/NotificationToast';
@@ -6,6 +6,7 @@ import NotificationToast from '../components/NotificationToast';
 function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
   const { formatted, status, start, pause, reset } = useTimer(timer.duration_seconds);
   const [doneMsg, setDoneMsg] = useState('');
+  const handleDismiss = useCallback(() => setDoneMsg(''), []);
 
   useEffect(() => {
     if (status === 'done') {
@@ -16,7 +17,7 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
 
   return (
     <div className="flex flex-col items-center gap-6 py-10">
-      {doneMsg && <NotificationToast message={doneMsg} onClose={() => setDoneMsg('')} />}
+      {doneMsg && <NotificationToast message={doneMsg} onClose={handleDismiss} />}
       <h2 className="text-xl font-semibold text-gray-700">{timer.name}</h2>
       <div className="text-7xl font-mono font-bold text-indigo-600">{formatted}</div>
       <div className="flex gap-3">
@@ -44,7 +45,17 @@ export default function TimerPage() {
   const [newMinutes, setNewMinutes] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => { timerApi.getAll().then(setTimers); }, []);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await timerApi.getAll();
+        setTimers(data);
+      } catch {
+        setError('加载计时器失败，请刷新重试');
+      }
+    };
+    load();
+  }, []);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newMinutes) return;
@@ -56,8 +67,12 @@ export default function TimerPage() {
   };
 
   const handleDelete = async (id: number) => {
-    await timerApi.remove(id);
-    setTimers(prev => prev.filter(t => t.id !== id));
+    try {
+      await timerApi.remove(id);
+      setTimers(prev => prev.filter(t => t.id !== id));
+    } catch {
+      setError('删除计时器失败，请重试');
+    }
   };
 
   if (selected) return <TimerDisplay timer={selected} onBack={() => setSelected(null)} />;
@@ -65,6 +80,7 @@ export default function TimerPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">计时器</h1>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {timers.map(t => (
           <div key={t.id} className="bg-white rounded-xl p-4 shadow-sm border hover:border-indigo-300 transition">
