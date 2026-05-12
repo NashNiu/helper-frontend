@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { financeApi } from '../api/finance';
 import type { FinanceRecord } from '../api/finance';
 import FinanceCharts from '../components/FinanceCharts';
@@ -26,39 +26,54 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(false);
   const [range, setRange] = useState<Range>('week');
   const [showChart, setShowChart] = useState(false);
+  const [error, setError] = useState('');
 
-  const loadRecords = async (r: Range) => {
-    const { from, to } = getRangeDates(r);
-    const data = await financeApi.getAll(from, to);
-    setRecords(data);
-  };
+  const loadRecords = useCallback(async (r: Range) => {
+    setError('');
+    try {
+      const { from, to } = getRangeDates(r);
+      const data = await financeApi.getAll(from, to);
+      setRecords(data);
+    } catch {
+      setError('加载记录失败，请重试');
+    }
+  }, []);
 
-  useEffect(() => { loadRecords(range); }, [range]);
+  useEffect(() => { loadRecords(range); }, [range, loadRecords]);
 
   const handleCreate = async () => {
     if (!input.trim()) return;
+    setError('');
     setLoading(true);
     try {
-      const record = await financeApi.create(input);
-      setRecords(prev => [record, ...prev]);
+      await financeApi.create(input);
+      await loadRecords(range);  // reload so range filter is applied
       setInput('');
+    } catch {
+      setError('记录创建失败，请重试');
     } finally { setLoading(false); }
   };
 
   const handleDelete = async (id: number) => {
-    await financeApi.remove(id);
-    setRecords(prev => prev.filter(r => r.id !== id));
+    setError('');
+    try {
+      await financeApi.remove(id);
+      setRecords(prev => prev.filter(r => r.id !== id));
+    } catch {
+      setError('删除失败，请重试');
+    }
   };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">收支记录</h1>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="bg-white rounded-xl p-4 shadow-sm border flex gap-2">
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleCreate()}
+          onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
           placeholder="例：午饭吃了快餐，花了15"
           className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
         />
