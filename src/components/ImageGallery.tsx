@@ -12,6 +12,9 @@ export default function ImageGallery({ images, onDelete }: Props) {
   if (images.length === 0) return null;
 
   const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
+  const safeIndex = lightboxIndex !== null
+    ? Math.min(lightboxIndex, sorted.length - 1)
+    : null;
 
   return (
     <>
@@ -34,13 +37,13 @@ export default function ImageGallery({ images, onDelete }: Props) {
         ))}
       </div>
 
-      {lightboxIndex !== null && (
+      {safeIndex !== null && safeIndex >= 0 && sorted.length > 0 && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center" onClick={() => setLightboxIndex(null)}>
           <button
             className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-3xl"
             onClick={e => { e.stopPropagation(); setLightboxIndex(i => Math.max(0, (i ?? 0) - 1)); }}
           >‹</button>
-          <img src={`/uploads/${sorted[lightboxIndex].image_path}`} alt="" className="max-h-[85vh] max-w-[85vw] rounded-lg" onClick={e => e.stopPropagation()} />
+          <img src={`/uploads/${sorted[safeIndex].image_path}`} alt="" className="max-h-[85vh] max-w-[85vw] rounded-lg" onClick={e => e.stopPropagation()} />
           <button
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-3xl"
             onClick={e => { e.stopPropagation(); setLightboxIndex(i => Math.min(sorted.length - 1, (i ?? 0) + 1)); }}

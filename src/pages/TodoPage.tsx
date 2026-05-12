@@ -7,33 +7,62 @@ export default function TodoPage() {
   const [content, setContent] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { todoApi.getAll().then(setTodos); }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await todoApi.getAll();
+        setTodos(data);
+      } catch {
+        setError('加载待办失败，请刷新重试');
+      }
+    })();
+  }, []);
 
   const handleCreate = async () => {
     if (!content.trim()) return;
+    setError('');
     setLoading(true);
     try {
       const todo = await todoApi.create(content, pendingFiles);
       setTodos(prev => [todo, ...prev]);
       setContent(''); setPendingFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch {
+      setError('创建待办失败，请重试');
     } finally { setLoading(false); }
   };
 
   const handleToggle = async (todo: Todo) => {
-    const updated = await todoApi.update(todo.id, { is_done: !todo.is_done });
-    setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
+    setError('');
+    try {
+      const updated = await todoApi.update(todo.id, { is_done: !todo.is_done });
+      setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
+    } catch {
+      setError('更新待办失败，请重试');
+    }
   };
 
   const handleDelete = async (id: number) => {
-    await todoApi.remove(id);
-    setTodos(prev => prev.filter(t => t.id !== id));
+    setError('');
+    try {
+      await todoApi.remove(id);
+      setTodos(prev => prev.filter(t => t.id !== id));
+    } catch {
+      setError('删除待办失败，请重试');
+    }
   };
 
   const handleDeleteImage = async (todoId: number, imageId: number) => {
-    await todoApi.removeImage(todoId, imageId);
-    setTodos(prev => prev.map(t => t.id === todoId ? { ...t, images: t.images.filter(i => i.id !== imageId) } : t));
+    setError('');
+    try {
+      await todoApi.removeImage(todoId, imageId);
+      setTodos(prev => prev.map(t => t.id === todoId ? { ...t, images: t.images.filter(i => i.id !== imageId) } : t));
+    } catch {
+      setError('删除图片失败，请重试');
+    }
   };
 
   const pending = todos.filter(t => !t.is_done);
@@ -42,13 +71,14 @@ export default function TodoPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">待办事项</h1>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="bg-white rounded-xl p-4 shadow-sm border space-y-3">
         <div className="flex gap-2">
           <input
             value={content}
             onChange={e => setContent(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleCreate()}
+            onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
             placeholder="添加待办..."
             className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
