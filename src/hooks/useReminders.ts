@@ -3,16 +3,19 @@ import { reminderApi, Reminder } from '../api/reminder';
 
 export function useReminders(onTrigger: (reminder: Reminder) => void) {
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const isMountedRef = useRef(true);
 
   const schedule = useCallback((reminder: Reminder) => {
     const delay = new Date(reminder.trigger_at).getTime() - Date.now();
     if (timersRef.current.has(reminder.id)) return;
     if (delay <= 0) {
+      if (!isMountedRef.current) return;
       onTrigger(reminder);
       reminderApi.markTriggered(reminder.id).catch(() => {});
       return;
     }
     const t = setTimeout(async () => {
+      if (!isMountedRef.current) return;
       onTrigger(reminder);
       await reminderApi.markTriggered(reminder.id).catch(() => {});
       timersRef.current.delete(reminder.id);
@@ -26,8 +29,10 @@ export function useReminders(onTrigger: (reminder: Reminder) => void) {
   }, [schedule]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadAndSchedule();
     return () => {
+      isMountedRef.current = false;
       timersRef.current.forEach(t => clearTimeout(t));
     };
   }, [loadAndSchedule]);
