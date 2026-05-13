@@ -2,32 +2,39 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 export type TimerStatus = 'idle' | 'running' | 'paused' | 'done';
 
-export function useTimer(durationSeconds: number) {
+export function useTimer(durationSeconds: number, onDone?: () => void) {
   const [remaining, setRemaining] = useState(durationSeconds);
   const [status, setStatus] = useState<TimerStatus>('idle');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => { clearInterval(intervalRef.current ?? undefined); };
   }, []);
 
-  // Detect completion: when remaining hits 0 and we're running, stop
-  useEffect(() => {
-    if (remaining === 0 && status === 'running') {
-      clearInterval(intervalRef.current ?? undefined);
-      setStatus('done');
-    }
-  }, [remaining, status]);
-
   const start = useCallback(() => {
     if (status === 'running') return;
+    let current = status === 'done' ? durationSeconds : remaining;
     if (status === 'done') setRemaining(durationSeconds);
     setStatus('running');
     intervalRef.current = setInterval(() => {
-      setRemaining(prev => Math.max(0, prev - 1));
+      current = Math.max(0, current - 1);
+      if (current <= 0) {
+        clearInterval(intervalRef.current ?? undefined);
+        intervalRef.current = null;
+        setRemaining(0);
+        setStatus('done');
+        onDoneRef.current?.();
+      } else {
+        setRemaining(current);
+      }
     }, 1000);
-  }, [status, durationSeconds]);
+  }, [status, durationSeconds, remaining]);
 
   const pause = useCallback(() => {
     clearInterval(intervalRef.current ?? undefined);

@@ -39,7 +39,19 @@ export default function FinancePage() {
     }
   }, []);
 
-  useEffect(() => { loadRecords(range); }, [range, loadRecords]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { from, to } = getRangeDates(range);
+        const data = await financeApi.getAll(from, to);
+        if (!cancelled) setRecords(data);
+      } catch {
+        if (!cancelled) setError('加载记录失败，请重试');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [range]);
 
   const handleCreate = async () => {
     if (!input.trim()) return;

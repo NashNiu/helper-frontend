@@ -31,10 +31,11 @@ export function useReminders(onTrigger: (reminder: Reminder) => void) {
 
   useEffect(() => {
     isMountedRef.current = true;
+    const timers = timersRef.current;
     loadAndSchedule();
     return () => {
       isMountedRef.current = false;
-      timersRef.current.forEach(t => clearTimeout(t));
+      timers.forEach(t => clearTimeout(t));
     };
   }, [loadAndSchedule]);
 

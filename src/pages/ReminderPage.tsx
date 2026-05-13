@@ -1,31 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { reminderApi } from '../api/reminder';
 import type { Reminder } from '../api/reminder';
-import { useReminders } from '../hooks/useReminders';
-import NotificationToast from '../components/NotificationToast';
+import { useRemindersContext } from '../contexts/useRemindersContext';
+import { requestNotificationPermission } from '../utils/notify';
 
 export default function ReminderPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<Reminder | null>(null);
   const [error, setError] = useState('');
+  const { scheduleOne } = useRemindersContext();
 
-  const handleTrigger = useCallback((r: Reminder) => {
-    setToast(r);
-    setReminders(prev => prev.map(x => x.id === r.id ? { ...x, is_triggered: true } : x));
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await reminderApi.getAll();
+        if (!cancelled) setReminders(data);
+      } catch {
+        if (!cancelled) setError('加载提醒失败，请刷新重试');
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
-
-  const { scheduleOne } = useReminders(handleTrigger);
-
-  useEffect(() => { reminderApi.getAll().then(setReminders); }, []);
-
-  const handleToastClose = useCallback(() => setToast(null), []);
 
   const handleCreate = async () => {
     if (!input.trim()) return;
     setLoading(true);
     setError('');
+    // 主动尝试触发权限授权（用户点击操作即用户手势）
+    requestNotificationPermission().catch(() => {});
     try {
       const r = await reminderApi.create(input);
       setReminders(prev => [r, ...prev]);
@@ -50,7 +54,6 @@ export default function ReminderPage() {
 
   return (
     <div className="space-y-6">
-      {toast && <NotificationToast message={`⏰ ${toast.message}`} onClose={handleToastClose} />}
       <h1 className="text-2xl font-bold text-gray-800">定时提醒</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
