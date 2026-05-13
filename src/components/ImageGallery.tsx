@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TodoImage } from '../api/todo';
+import type { TodoImage } from '../api/todo';
 
 interface Props {
   images: TodoImage[];

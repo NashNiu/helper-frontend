@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { reminderApi, Reminder } from '../api/reminder';
+import { reminderApi } from '../api/reminder';
+import type { Reminder } from '../api/reminder';
 
 export function useReminders(onTrigger: (reminder: Reminder) => void) {
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());

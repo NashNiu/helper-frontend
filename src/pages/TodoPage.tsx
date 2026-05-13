@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { todoApi, Todo } from '../api/todo';
+import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
+import type { Todo } from '../api/todo';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);

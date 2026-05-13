@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { timerApi, Timer } from '../api/timer';
+import { timerApi } from '../api/timer';
 import { useTimer } from '../hooks/useTimer';
 import NotificationToast from '../components/NotificationToast';
+import type { Timer } from '../api/timer';
 
 function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
   const { formatted, status, start, pause, reset } = useTimer(timer.duration_seconds);
