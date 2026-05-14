@@ -1,1 +1,8 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  *, *::before, *::after {
+    transition: color 250ms ease, background-color 250ms ease, border-color 250ms ease;
+  }
+}

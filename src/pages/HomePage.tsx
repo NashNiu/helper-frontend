@@ -17,11 +17,11 @@ import { getErrorMessage } from '../api/http';
 import { useResource, invalidate } from '../hooks/useResource';
 import { CACHE_KEYS } from '../api/cacheKeys';
 
-const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string }> = {
-  reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700',  route: '/reminders' },
-  timer:    { label: '计时器', Icon: ClockIcon,                    iconColor: 'text-purple-400',  color: 'bg-purple-100 text-purple-700',  route: '/timer' },
-  todo:     { label: '待办',  Icon: ClipboardDocumentCheckIcon,   iconColor: 'text-blue-400',    color: 'bg-blue-100 text-blue-700',      route: '/todo' },
-  finance:  { label: '收支',  Icon: BanknotesIcon,                iconColor: 'text-emerald-400', color: 'bg-emerald-100 text-emerald-700', route: '/finance' },
+const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string; gradient: string; border: string }> = {
+  reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',   route: '/reminders', gradient: 'bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-gray-900',   border: 'border border-orange-100 dark:border-orange-900/40' },
+  timer:    { label: '计时器', Icon: ClockIcon,                    iconColor: 'text-purple-400',  color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',   route: '/timer',     gradient: 'bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900',   border: 'border border-purple-100 dark:border-purple-900/40' },
+  todo:     { label: '待办',  Icon: ClipboardDocumentCheckIcon,   iconColor: 'text-blue-400',    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',           route: '/todo',      gradient: 'bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900',     border: 'border border-blue-100 dark:border-blue-900/40' },
+  finance:  { label: '收支',  Icon: BanknotesIcon,                iconColor: 'text-emerald-400', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300', route: '/finance',   gradient: 'bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950/30 dark:to-gray-900', border: 'border border-emerald-100 dark:border-emerald-900/40' },
 };
 
 interface QuickAction {
@@ -182,11 +182,11 @@ export default function HomePage() {
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-800">嗨，今天想记点什么？</h1>
-        <p className="text-sm text-gray-500 mt-1">一句话搞定提醒、计时、待办和记账</p>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-violet-400 dark:from-indigo-400 dark:to-violet-300 bg-clip-text text-transparent">嗨，今天想记点什么？</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">一句话搞定提醒、计时、待办和记账</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+      <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900/40 p-4 space-y-3">
         <textarea
           ref={inputRef}
           value={input}
@@ -194,7 +194,7 @@ export default function HomePage() {
           onKeyDown={handleKeyDown}
           placeholder="例：10 分钟后提醒我喝水 / 午饭花了 25 元 / 买牛奶 / 25 分钟番茄钟"
           rows={2}
-          className="w-full resize-none border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className="w-full resize-none rounded-xl px-3 py-2 text-sm bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
         />
 
         <div className="flex flex-wrap gap-2">
@@ -203,7 +203,7 @@ export default function HomePage() {
               key={q.label}
               onClick={() => applyQuick(q)}
               type="button"
-              className="text-xs px-3 py-1.5 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-700 transition"
+              className="text-xs px-3 py-1.5 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-700 dark:bg-gray-800 dark:hover:bg-indigo-900/40 dark:text-gray-300 dark:hover:text-indigo-300 transition"
             >
               + {q.label}
             </button>
@@ -211,7 +211,7 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center justify-between pt-1">
-          <span className={`text-xs ${status.kind === 'err' ? 'text-red-500' : status.kind === 'ok' ? 'text-emerald-600' : 'text-gray-400'}`}>
+          <span className={`text-xs ${status.kind === 'err' ? 'text-red-500' : status.kind === 'ok' ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500'}`}>
             {status.text || '回车发送，Shift+回车换行'}
           </span>
           <button
@@ -226,11 +226,11 @@ export default function HomePage() {
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-shrink-0 flex items-center justify-between mb-2">
-          <h2 className="text-sm font-medium text-gray-500">最近记录</h2>
+          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">最近记录</h2>
           <button onClick={refreshAll} className="text-xs text-indigo-500 hover:underline">刷新</button>
         </div>
         {feed.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">还没有记录，从上面输入开始吧～</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">还没有记录，从上面输入开始吧～</p>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2">
             {feed.map(item => {
@@ -239,22 +239,22 @@ export default function HomePage() {
                 <button
                   key={item.id}
                   onClick={() => navigate(meta.route)}
-                  className="w-full text-left bg-white rounded-xl p-3 shadow-sm border hover:border-indigo-300 transition flex items-start gap-3"
+                  className={`w-full text-left rounded-xl p-3 shadow-sm hover:shadow-md transition flex items-start gap-3 ${meta.gradient} ${meta.border}`}
                 >
                   <meta.Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${meta.iconColor}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${meta.color}`}>{meta.label}</span>
-                      <p className="text-sm font-medium text-gray-800 truncate">{item.title}</p>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.title}</p>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-400 truncate">{item.subtitle}</p>
-                      <p className="text-xs text-gray-300 flex-shrink-0">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{item.subtitle}</p>
+                      <p className="text-xs text-gray-300 dark:text-gray-600 flex-shrink-0">
                         {new Date(item.timestamp).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
-                  <ChevronRightIcon className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                  <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 mt-0.5" />
                 </button>
               );
             })}
