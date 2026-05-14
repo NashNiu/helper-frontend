@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { http } from './http';
 
 export interface Reminder {
   id: number;
@@ -10,10 +10,10 @@ export interface Reminder {
 
 export const reminderApi = {
   getAll: (triggered?: boolean) =>
-    axios.get<Reminder[]>('/api/reminders', { params: triggered !== undefined ? { triggered } : {} }).then(r => r.data),
+    http.get<Reminder[]>('/api/reminders', { params: triggered !== undefined ? { triggered } : {} }).then(r => r.data),
   create: (input: string) =>
-    axios.post<Reminder>('/api/reminders', { input }).then(r => r.data),
+    http.post<Reminder>('/api/reminders', { input }).then(r => r.data),
   markTriggered: (id: number) =>
-    axios.patch<Reminder>(`/api/reminders/${id}/triggered`).then(r => r.data),
-  remove: (id: number) => axios.delete(`/api/reminders/${id}`),
+    http.patch<Reminder>(`/api/reminders/${id}/triggered`).then(r => r.data),
+  remove: (id: number) => http.delete(`/api/reminders/${id}`),
 };

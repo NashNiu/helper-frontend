@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
 import type { Todo } from '../api/todo';
+import { getErrorMessage } from '../api/http';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -16,8 +17,8 @@ export default function TodoPage() {
       try {
         const data = await todoApi.getAll();
         setTodos(data);
-      } catch {
-        setError('加载待办失败，请刷新重试');
+      } catch (err) {
+        setError(getErrorMessage(err, '加载待办失败，请刷新重试'));
       }
     })();
   }, []);
@@ -31,8 +32,8 @@ export default function TodoPage() {
       setTodos(prev => [todo, ...prev]);
       setContent(''); setPendingFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch {
-      setError('创建待办失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '创建待办失败，请重试'));
     } finally { setLoading(false); }
   };
 
@@ -41,18 +42,19 @@ export default function TodoPage() {
     try {
       const updated = await todoApi.update(todo.id, { is_done: !todo.is_done });
       setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
-    } catch {
-      setError('更新待办失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '更新待办失败，请重试'));
     }
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm('确认删除这条待办？相关图片也会一并删除。')) return;
     setError('');
     try {
       await todoApi.remove(id);
       setTodos(prev => prev.filter(t => t.id !== id));
-    } catch {
-      setError('删除待办失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '删除待办失败，请重试'));
     }
   };
 
@@ -61,8 +63,8 @@ export default function TodoPage() {
     try {
       await todoApi.removeImage(todoId, imageId);
       setTodos(prev => prev.map(t => t.id === todoId ? { ...t, images: t.images.filter(i => i.id !== imageId) } : t));
-    } catch {
-      setError('删除图片失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '删除图片失败，请重试'));
     }
   };
 
@@ -123,11 +125,13 @@ function TodoList({ title, items, onToggle, onDelete, onDeleteImage }: {
           <div key={todo.id} className="bg-white rounded-xl p-4 shadow-sm border">
             <div className="flex items-start gap-3">
               <input type="checkbox" checked={todo.is_done} onChange={() => onToggle(todo)}
+                aria-label={`标记 ${todo.content} 为${todo.is_done ? '未完成' : '已完成'}`}
                 className="mt-1 h-4 w-4 accent-indigo-600 cursor-pointer" />
               <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                 {todo.content}
               </span>
-              <button onClick={() => onDelete(todo.id)} className="text-xs text-red-400 hover:text-red-600">删除</button>
+              <button onClick={() => onDelete(todo.id)} aria-label="删除待办"
+                className="text-xs text-red-400 hover:text-red-600">删除</button>
             </div>
             <ImageGallery images={todo.images} onDelete={imageId => onDeleteImage(todo.id, imageId)} />
           </div>

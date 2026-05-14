@@ -30,21 +30,26 @@ export default function FinanceCharts({ records }: Props) {
   if (records.length === 0)
     return <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>;
 
-  // 按日期聚合收支
+  // 按日期聚合收支。
+  // 关键点：key 用 ISO YYYY-MM-DD（字符串可直接 lexicographic 排序），
+  // 显示时再 format 成 MM/DD —— 这样跨年也是按时间正确顺序。
   const byDay = records.reduce<
     Record<string, { income: number; expense: number }>
   >((acc, r) => {
-    const day = new Date(r.happened_at).toLocaleDateString("zh-CN", {
-      month: "numeric",
-      day: "numeric",
-    });
-    if (!acc[day]) acc[day] = { income: 0, expense: 0 };
-    if (r.amount > 0) acc[day].income += r.amount;
-    else acc[day].expense += Math.abs(r.amount);
+    const d = new Date(r.happened_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (!acc[key]) acc[key] = { income: 0, expense: 0 };
+    if (r.amount > 0) acc[key].income += r.amount;
+    else acc[key].expense += Math.abs(r.amount);
     return acc;
   }, {});
 
-  const barData = Object.entries(byDay).map(([day, v]) => ({ day, ...v }));
+  const barData = Object.entries(byDay)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([isoDay, v]) => ({
+      day: `${isoDay.slice(5, 7)}/${isoDay.slice(8, 10)}`,
+      ...v,
+    }));
 
   // 按分类聚合支出
   const byCategory = records

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { classifyApi } from '../api/classify';
 import type { AssistantType } from '../api/classify';
@@ -12,6 +12,9 @@ import { timerApi } from '../api/timer';
 import type { Timer } from '../api/timer';
 import { useRemindersContext } from '../contexts/useRemindersContext';
 import { requestNotificationPermission } from '../utils/notify';
+import { getErrorMessage } from '../api/http';
+import { useResource, invalidate } from '../hooks/useResource';
+import { CACHE_KEYS } from '../api/cacheKeys';
 
 const TYPE_META: Record<AssistantType, { label: string; icon: string; color: string; route: string }> = {
   reminder: { label: '提醒', icon: '⏰', color: 'bg-orange-100 text-orange-700', route: '/reminders' },
@@ -23,7 +26,6 @@ const TYPE_META: Record<AssistantType, { label: string; icon: string; color: str
 interface QuickAction {
   label: string;
   template: string;
-  /** caret offset (from start). undefined = end of template */
   caret?: number;
 }
 
@@ -80,7 +82,7 @@ function buildFeed(
     type: 'timer',
     title: t.name,
     subtitle: `${Math.round(t.duration_seconds / 60)} 分钟计时器`,
-    timestamp: 0,
+    timestamp: new Date(t.created_at).getTime(),
   }));
 
   return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
@@ -92,41 +94,40 @@ export default function HomePage() {
   const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: 'idle' | 'ok' | 'err'; text: string }>({ kind: 'idle', text: '' });
-  const [feedKey, setFeedKey] = useState(0);
   const { scheduleOne } = useRemindersContext();
 
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [finance, setFinance] = useState<FinanceRecord[]>([]);
-  const [timers, setTimers] = useState<Timer[]>([]);
+  const [financeFromDay] = useState(
+    () => new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [r, t, f, m] = await Promise.all([
-          reminderApi.getAll().catch(() => [] as Reminder[]),
-          todoApi.getAll().catch(() => [] as Todo[]),
-          (async () => {
-            const to = new Date().toISOString();
-            const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-            return financeApi.getAll(from, to).catch(() => [] as FinanceRecord[]);
-          })(),
-          timerApi.getAll().catch(() => [] as Timer[]),
-        ]);
-        if (cancelled) return;
-        setReminders(r); setTodos(t); setFinance(f); setTimers(m);
-      } catch {
-        // already swallowed per call
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [feedKey]);
+  const remindersRes = useResource(CACHE_KEYS.reminders, () => reminderApi.getAll());
+  const todosRes = useResource(CACHE_KEYS.todos, () => todoApi.getAll());
+  const financeRes = useResource(
+    CACHE_KEYS.finance(financeFromDay),
+    () => {
+      const to = new Date().toISOString();
+      const from = new Date(`${financeFromDay}T00:00:00`).toISOString();
+      return financeApi.getAll(from, to);
+    },
+  );
+  const timersRes = useResource(CACHE_KEYS.timers, () => timerApi.getAll());
 
   const feed = useMemo(
-    () => buildFeed(reminders, todos, finance, timers),
-    [reminders, todos, finance, timers],
+    () => buildFeed(
+      remindersRes.data ?? [],
+      todosRes.data ?? [],
+      financeRes.data ?? [],
+      timersRes.data ?? [],
+    ),
+    [remindersRes.data, todosRes.data, financeRes.data, timersRes.data],
   );
+
+  const refreshAll = useCallback(() => {
+    invalidate(CACHE_KEYS.reminders);
+    invalidate(CACHE_KEYS.todos);
+    invalidate(CACHE_KEYS.finance(financeFromDay));
+    invalidate(CACHE_KEYS.timers);
+  }, [financeFromDay]);
 
   const applyQuick = useCallback((q: QuickAction) => {
     setInput(q.template);
@@ -142,7 +143,6 @@ export default function HomePage() {
   const handleSubmit = useCallback(async () => {
     const text = input.trim();
     if (!text || submitting) return;
-    // 用户主动点击发送时顺便请求通知权限（满足浏览器需要用户手势的要求）
     requestNotificationPermission().catch(() => {});
     setSubmitting(true);
     setStatus({ kind: 'idle', text: '正在识别…' });
@@ -151,22 +151,25 @@ export default function HomePage() {
       if (type === 'reminder') {
         const r = await reminderApi.create(text);
         scheduleOne(r);
+        invalidate(CACHE_KEYS.reminders);
       } else if (type === 'finance') {
         await financeApi.create(text);
+        invalidate(CACHE_KEYS.finance(financeFromDay));
       } else if (type === 'todo') {
         await todoApi.create(text, []);
+        invalidate(CACHE_KEYS.todos);
       } else if (type === 'timer') {
         await timerApi.createFromText(text);
+        invalidate(CACHE_KEYS.timers);
       }
       setInput('');
       setStatus({ kind: 'ok', text: `已添加到「${TYPE_META[type].label}」` });
-      setFeedKey(k => k + 1);
-    } catch {
-      setStatus({ kind: 'err', text: '处理失败，请重试或换个说法' });
+    } catch (err) {
+      setStatus({ kind: 'err', text: getErrorMessage(err, '处理失败，请重试或换个说法') });
     } finally {
       setSubmitting(false);
     }
-  }, [input, submitting, scheduleOne]);
+  }, [input, submitting, scheduleOne, financeFromDay]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -223,7 +226,7 @@ export default function HomePage() {
       <div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-medium text-gray-500">最近记录</h2>
-          <button onClick={() => setFeedKey(k => k + 1)} className="text-xs text-indigo-500 hover:underline">刷新</button>
+          <button onClick={refreshAll} className="text-xs text-indigo-500 hover:underline">刷新</button>
         </div>
         {feed.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">还没有记录，从上面输入开始吧～</p>

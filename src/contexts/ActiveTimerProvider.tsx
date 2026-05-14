@@ -6,6 +6,7 @@ import type { ActiveTimerState } from './ActiveTimerContext';
 import { showSystemNotification } from '../utils/notify';
 
 const STORAGE_KEY = 'active-timer-state';
+const NOTIFIED_KEY = 'active-timer-notified-id';
 
 interface PersistedState {
   timerId: number;
@@ -13,6 +14,7 @@ interface PersistedState {
   timerDurationSeconds: number;
   timerType: string;
   timerIsPreset: boolean;
+  timerCreatedAt: string;
   status: 'running' | 'paused';
   /** epoch ms when the countdown is expected to hit 0 (running) */
   endsAt?: number;
@@ -31,6 +33,7 @@ function loadPersisted(): ActiveTimerState | null {
       duration_seconds: p.timerDurationSeconds,
       type: p.timerType,
       is_preset: p.timerIsPreset,
+      created_at: p.timerCreatedAt ?? new Date(0).toISOString(),
     };
     if (p.status === 'running' && typeof p.endsAt === 'number') {
       const remaining = Math.max(0, Math.ceil((p.endsAt - Date.now()) / 1000));
@@ -61,6 +64,7 @@ function persist(state: ActiveTimerState | null) {
       timerDurationSeconds: state.timer.duration_seconds,
       timerType: state.timer.type,
       timerIsPreset: state.timer.is_preset,
+      timerCreatedAt: state.timer.created_at,
       status: state.status === 'running' ? 'running' : 'paused',
     };
     if (state.status === 'running') {
@@ -74,12 +78,31 @@ function persist(state: ActiveTimerState | null) {
   }
 }
 
+function loadNotifiedId(): number | null {
+  try {
+    const raw = localStorage.getItem(NOTIFIED_KEY);
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistNotifiedId(id: number | null) {
+  try {
+    if (id === null) localStorage.removeItem(NOTIFIED_KEY);
+    else localStorage.setItem(NOTIFIED_KEY, String(id));
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function ActiveTimerProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<ActiveTimerState | null>(() => loadPersisted());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endsAtRef = useRef<number | null>(null);
-  /** Tracks the timer.id we've already notified for, so we don't double-fire. */
-  const notifiedIdRef = useRef<number | null>(null);
+  const notifiedIdRef = useRef<number | null>(loadNotifiedId());
 
   const clearInterval$ = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -91,6 +114,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   const fireDone = useCallback((state: ActiveTimerState) => {
     if (notifiedIdRef.current === state.timer.id) return;
     notifiedIdRef.current = state.timer.id;
+    persistNotifiedId(state.timer.id);
     const message = `「${state.timer.name}」计时结束！`;
     showSystemNotification({
       title: '⏱️ 计时结束',
@@ -100,7 +124,6 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play().catch(() => {});
   }, []);
 
-  // Tick loop: re-derives remaining from endsAtRef every second.
   const startTicking = useCallback(() => {
     clearInterval$();
     intervalRef.current = setInterval(() => {
@@ -119,16 +142,14 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
         if (remaining === prev.remaining) return prev;
         return { ...prev, remaining, formatted: formatRemaining(remaining) };
       });
-    }, 250);
+    }, 500);
   }, [clearInterval$, fireDone]);
 
-  // If we restored a running state on mount, immediately resume ticking.
   useEffect(() => {
     if (active?.status === 'running') {
       endsAtRef.current = Date.now() + active.remaining * 1000;
       startTicking();
     } else if (active?.status === 'done') {
-      // Was completed while page was closed; emit notification now (once).
       fireDone(active);
     }
     return () => { clearInterval$(); };
@@ -138,6 +159,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   const start = useCallback((timer: Timer) => {
     clearInterval$();
     notifiedIdRef.current = null;
+    persistNotifiedId(null);
     const remaining = timer.duration_seconds;
     endsAtRef.current = Date.now() + remaining * 1000;
     const state: ActiveTimerState = {
@@ -179,6 +201,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
       clearInterval$();
       endsAtRef.current = null;
       notifiedIdRef.current = null;
+      persistNotifiedId(null);
       const remaining = prev.timer.duration_seconds;
       const next: ActiveTimerState = {
         timer: prev.timer,
@@ -195,6 +218,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     clearInterval$();
     endsAtRef.current = null;
     notifiedIdRef.current = null;
+    persistNotifiedId(null);
     persist(null);
     setActive(null);
   }, [clearInterval$]);
