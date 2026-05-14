@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BellAlertIcon, ClockIcon, ClipboardDocumentCheckIcon, BanknotesIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { classifyApi } from '../api/classify';
 import type { AssistantType } from '../api/classify';
 import { reminderApi } from '../api/reminder';
@@ -16,11 +17,11 @@ import { getErrorMessage } from '../api/http';
 import { useResource, invalidate } from '../hooks/useResource';
 import { CACHE_KEYS } from '../api/cacheKeys';
 
-const TYPE_META: Record<AssistantType, { label: string; icon: string; color: string; route: string }> = {
-  reminder: { label: '提醒', icon: '⏰', color: 'bg-orange-100 text-orange-700', route: '/reminders' },
-  timer:    { label: '计时器', icon: '⏱️', color: 'bg-purple-100 text-purple-700', route: '/timer' },
-  todo:     { label: '待办', icon: '✅', color: 'bg-blue-100 text-blue-700', route: '/todo' },
-  finance:  { label: '收支', icon: '💸', color: 'bg-emerald-100 text-emerald-700', route: '/finance' },
+const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string }> = {
+  reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700',  route: '/reminders' },
+  timer:    { label: '计时器', Icon: ClockIcon,                    iconColor: 'text-purple-400',  color: 'bg-purple-100 text-purple-700',  route: '/timer' },
+  todo:     { label: '待办',  Icon: ClipboardDocumentCheckIcon,   iconColor: 'text-blue-400',    color: 'bg-blue-100 text-blue-700',      route: '/todo' },
+  finance:  { label: '收支',  Icon: BanknotesIcon,                iconColor: 'text-emerald-400', color: 'bg-emerald-100 text-emerald-700', route: '/finance' },
 };
 
 interface QuickAction {
@@ -240,7 +241,7 @@ export default function HomePage() {
                   onClick={() => navigate(meta.route)}
                   className="w-full text-left bg-white rounded-xl p-3 shadow-sm border hover:border-indigo-300 transition flex items-start gap-3"
                 >
-                  <span className="text-lg leading-none mt-0.5">{meta.icon}</span>
+                  <meta.Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${meta.iconColor}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${meta.color}`}>{meta.label}</span>
@@ -253,7 +254,7 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-gray-300 text-sm">›</span>
+                  <ChevronRightIcon className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
                 </button>
               );
             })}

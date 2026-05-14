@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { timerApi } from "../api/timer";
 import type { Timer } from "../api/timer";
 import { useActiveTimer } from "../contexts/useActiveTimer";
@@ -90,16 +90,16 @@ function PomodoroSetup({
 }) {
   const { startPomodoro } = useActiveTimer();
   const [cycles, setCycles] = useState(4);
+  // 组件挂载时刻，用 useState 懒初始化（只运行一次，不在重渲染时调用）
+  const [mountMs] = useState(() => Date.now());
 
   const workMin = Math.round(workTimer.duration_seconds / 60);
   const breakMin = Math.round(breakTimer.duration_seconds / 60);
-  // N 轮工作 + (N-1) 次休息
   const totalMin = cycles * workMin + (cycles - 1) * breakMin;
-  const endTime = new Date(Date.now() + totalMin * 60 * 1000);
-  const endTimeStr = endTime.toLocaleTimeString("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const endTimeStr = useMemo(() => {
+    const end = new Date(mountMs + totalMin * 60 * 1000);
+    return end.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }, [mountMs, totalMin]);
 
   const handleStart = () => {
     requestNotificationPermission().catch(() => {});
