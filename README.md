@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# Helper 前端
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[English](README.en.md)
 
-Currently, two official plugins are available:
+个人效率工具 Web 应用，提供提醒、计时、待办和收支管理功能。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 技术栈
 
-## React Compiler
+- **框架:** React 19 + TypeScript
+- **构建工具:** Vite 8
+- **样式:** Tailwind CSS 4
+- **路由:** React Router DOM 7
+- **图表:** Recharts
+- **HTTP 客户端:** Axios
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 功能模块
 
-## Expanding the ESLint configuration
+| 模块 | 路由 | 说明 |
+|------|------|------|
+| 首页 | `/` | 仪表盘 |
+| 提醒 | `/reminders` | 提醒事项管理 |
+| 计时器 | `/timer` | 正计时 / 倒计时，底部悬浮控件 |
+| 待办 | `/todo` | 任务清单管理 |
+| 收支 | `/finance` | 收支记录与图表统计 |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 快速开始
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# 安装依赖
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# 启动开发服务器（需后端服务运行在 localhost:3001）
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 构建生产包
+npm run build
+
+# 预览生产包
+npm run preview
+
+# 代码检查
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 开发说明
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- 后端 API 代理到 `http://localhost:3001`（`/api` 和 `/uploads` 路径）
+- 状态管理使用 Context API（ActiveTimer、Reminders）
+- 自定义 Hooks：`useTimer`、`useReminders`、`useResource`
