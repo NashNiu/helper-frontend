@@ -17,11 +17,11 @@ import { getErrorMessage } from '../api/http';
 import { useResource, invalidate } from '../hooks/useResource';
 import { CACHE_KEYS } from '../api/cacheKeys';
 
-const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string }> = {
-  reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700',  route: '/reminders' },
-  timer:    { label: '计时器', Icon: ClockIcon,                    iconColor: 'text-purple-400',  color: 'bg-purple-100 text-purple-700',  route: '/timer' },
-  todo:     { label: '待办',  Icon: ClipboardDocumentCheckIcon,   iconColor: 'text-blue-400',    color: 'bg-blue-100 text-blue-700',      route: '/todo' },
-  finance:  { label: '收支',  Icon: BanknotesIcon,                iconColor: 'text-emerald-400', color: 'bg-emerald-100 text-emerald-700', route: '/finance' },
+const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string; gradient: string; border: string }> = {
+  reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700',   route: '/reminders', gradient: 'bg-gradient-to-r from-orange-50 to-white',   border: 'border border-orange-100' },
+  timer:    { label: '计时器', Icon: ClockIcon,                    iconColor: 'text-purple-400',  color: 'bg-purple-100 text-purple-700',   route: '/timer',     gradient: 'bg-gradient-to-r from-purple-50 to-white',   border: 'border border-purple-100' },
+  todo:     { label: '待办',  Icon: ClipboardDocumentCheckIcon,   iconColor: 'text-blue-400',    color: 'bg-blue-100 text-blue-700',       route: '/todo',      gradient: 'bg-gradient-to-r from-blue-50 to-white',     border: 'border border-blue-100' },
+  finance:  { label: '收支',  Icon: BanknotesIcon,                iconColor: 'text-emerald-400', color: 'bg-emerald-100 text-emerald-700', route: '/finance',   gradient: 'bg-gradient-to-r from-emerald-50 to-white',  border: 'border border-emerald-100' },
 };
 
 interface QuickAction {
@@ -182,11 +182,11 @@ export default function HomePage() {
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-800">嗨，今天想记点什么？</h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">嗨，今天想记点什么？</h1>
         <p className="text-sm text-gray-500 mt-1">一句话搞定提醒、计时、待办和记账</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+      <div className="bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-sm border border-indigo-100 p-4 space-y-3">
         <textarea
           ref={inputRef}
           value={input}
@@ -194,7 +194,7 @@ export default function HomePage() {
           onKeyDown={handleKeyDown}
           placeholder="例：10 分钟后提醒我喝水 / 午饭花了 25 元 / 买牛奶 / 25 分钟番茄钟"
           rows={2}
-          className="w-full resize-none border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className="w-full resize-none rounded-xl px-3 py-2 text-sm bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
         />
 
         <div className="flex flex-wrap gap-2">
@@ -239,7 +239,7 @@ export default function HomePage() {
                 <button
                   key={item.id}
                   onClick={() => navigate(meta.route)}
-                  className="w-full text-left bg-white rounded-xl p-3 shadow-sm border hover:border-indigo-300 transition flex items-start gap-3"
+                  className={`w-full text-left rounded-xl p-3 shadow-sm hover:shadow-md transition flex items-start gap-3 ${meta.gradient} ${meta.border}`}
                 >
                   <meta.Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${meta.iconColor}`} />
                   <div className="flex-1 min-w-0">

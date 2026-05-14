@@ -74,19 +74,19 @@ export default function TodoPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">待办事项</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">待办事项</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border space-y-3">
+      <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 shadow-sm border border-blue-100 space-y-3">
         <div className="flex gap-2">
           <input
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
             placeholder="添加待办..."
-            className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="flex-1 rounded-lg px-3 py-2 text-sm bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
           />
-          <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+          <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 rounded-lg text-sm text-gray-600 bg-white/80 hover:bg-white flex items-center gap-1 transition">
             <PhotoIcon className="w-4 h-4" />
             {pendingFiles.length > 0 && <span>({pendingFiles.length})</span>}
           </button>
@@ -124,7 +124,7 @@ function TodoList({ title, items, onToggle, onDelete, onDeleteImage }: {
       <h2 className="text-sm font-medium text-gray-500 mb-2">{title}（{items.length}）</h2>
       <div className="space-y-2">
         {items.map(todo => (
-          <div key={todo.id} className="bg-white rounded-xl p-4 shadow-sm border">
+          <div key={todo.id} className={`rounded-xl p-4 shadow-sm border transition ${todo.is_done ? 'bg-gradient-to-r from-gray-50 to-white border-gray-100' : 'bg-gradient-to-r from-blue-50 to-white border-blue-100'}`}>
             <div className="flex items-start gap-3">
               <input type="checkbox" checked={todo.is_done} onChange={() => onToggle(todo)}
                 aria-label={`标记 ${todo.content} 为${todo.is_done ? '未完成' : '已完成'}`}

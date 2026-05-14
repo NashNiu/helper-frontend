@@ -81,16 +81,16 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">收支记录</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">收支记录</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border flex gap-2">
+      <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-4 shadow-sm border border-emerald-100 flex gap-2">
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
           placeholder="例：午饭吃了快餐，花了15"
-          className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className="flex-1 rounded-lg px-3 py-2 text-sm bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 transition"
         />
         <button onClick={handleCreate} disabled={loading}
           className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">
@@ -102,7 +102,7 @@ export default function FinancePage() {
         <div className="flex gap-2">
           {(['today', 'week', 'month'] as Range[]).map(r => (
             <button key={r} onClick={() => setRange(r)}
-              className={`px-3 py-1 text-sm rounded-lg transition ${range === r ? 'bg-indigo-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+              className={`px-3 py-1 text-sm rounded-lg transition ${range === r ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               {r === 'today' ? '今天' : r === 'week' ? '本周' : '本月'}
             </button>
           ))}
@@ -117,7 +117,7 @@ export default function FinancePage() {
 
       <div className="space-y-2">
         {records.map(r => (
-          <div key={r.id} className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3">
+          <div key={r.id} className={`rounded-xl p-4 shadow-sm border flex items-center gap-3 ${r.amount > 0 ? 'bg-gradient-to-r from-green-50 to-white border-green-100' : 'bg-gradient-to-r from-red-50 to-white border-red-100'}`}>
             {r.amount > 0
               ? <ArrowTrendingUpIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
               : <ArrowTrendingDownIcon className="w-5 h-5 text-red-400 flex-shrink-0" />}

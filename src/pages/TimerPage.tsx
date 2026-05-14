@@ -90,7 +90,6 @@ function PomodoroSetup({
 }) {
   const { startPomodoro } = useActiveTimer();
   const [cycles, setCycles] = useState(4);
-  // 组件挂载时刻，用 useState 懒初始化（只运行一次，不在重渲染时调用）
   const [mountMs] = useState(() => Date.now());
 
   const workMin = Math.round(workTimer.duration_seconds / 60);
@@ -142,26 +141,6 @@ function PomodoroSetup({
         </div>
       </div>
 
-      {/* 循环预览 */}
-      {/* <div className="flex items-center gap-1 flex-wrap justify-center max-w-xs">
-        {Array.from({ length: cycles }, (_, i) => (
-          <span key={i} className="flex items-center gap-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600">
-              🍅{workMin}m
-            </span>
-            {i < cycles - 1 && (
-              <>
-                <span className="text-gray-300">›</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">
-                  ☕{breakMin}m
-                </span>
-                <span className="text-gray-300">›</span>
-              </>
-            )}
-          </span>
-        ))}
-      </div> */}
-
       <button
         onClick={handleStart}
         className="px-10 py-3 bg-indigo-600 text-white text-base rounded-xl hover:bg-indigo-700 font-medium"
@@ -198,7 +177,6 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="flex flex-col items-center gap-6 py-8">
-      {/* 轮次进度 */}
       <div className="text-center">
         <div className="flex items-center justify-center gap-1.5 mb-2">
           {Array.from({ length: pomodoro.totalCycles }, (_, i) => (
@@ -222,7 +200,6 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
         </p>
       </div>
 
-      {/* 倒计时 */}
       <div
         className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600" : isTransitioning ? "text-gray-400" : phaseColor}`}
       >
@@ -236,7 +213,6 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
         <p className="text-gray-400 text-sm">正在切换阶段…</p>
       )}
 
-      {/* 控制按钮 */}
       {!isAllDone && !isTransitioning && (
         <div className="flex gap-3">
           {isRunning && (
@@ -331,7 +307,6 @@ export default function TimerPage() {
   const pomodoroTimer = timers.find((t) => t.type === "pomodoro");
   const breakTimer = timers.find((t) => t.type === "short_break");
 
-  // 选中了番茄钟
   if (selected?.type === "pomodoro" && pomodoroTimer && breakTimer) {
     if (active?.pomodoro) {
       return <PomodoroDisplay onBack={() => setSelected(null)} />;
@@ -345,14 +320,13 @@ export default function TimerPage() {
     );
   }
 
-  // 选中了普通计时器
   if (selected) {
     return <TimerDisplay timer={selected} onBack={() => setSelected(null)} />;
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">计时器</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 bg-clip-text text-transparent">计时器</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -365,7 +339,7 @@ export default function TimerPage() {
           return (
             <div
               key={t.id}
-              className={`bg-white rounded-xl p-4 shadow-sm border hover:border-indigo-300 transition ${
+              className={`bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 shadow-sm border border-purple-100 hover:shadow-md transition ${
                 isActiveTimer || isPomodoroActive
                   ? "ring-2 ring-indigo-300"
                   : ""
@@ -416,7 +390,7 @@ export default function TimerPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 shadow-sm border border-purple-100">
         <h3 className="font-medium text-gray-700 mb-3">自定义计时器</h3>
         {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
         <div className="flex gap-2">
@@ -424,7 +398,7 @@ export default function TimerPage() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="名称"
-            className="border rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="rounded-lg px-3 py-2 text-sm flex-1 bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
           />
           <input
             value={newMinutes}
@@ -432,7 +406,7 @@ export default function TimerPage() {
             placeholder="分钟数"
             type="number"
             min="1"
-            className="border rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="rounded-lg px-3 py-2 text-sm w-24 bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
           />
           <button
             onClick={handleCreate}
@@ -445,4 +419,3 @@ export default function TimerPage() {
     </div>
   );
 }
-
