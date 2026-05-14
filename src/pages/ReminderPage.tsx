@@ -4,6 +4,7 @@ import type { Reminder } from '../api/reminder';
 import { useRemindersContext } from '../contexts/useRemindersContext';
 import { requestNotificationPermission } from '../utils/notify';
 import { getErrorMessage } from '../api/http';
+import { BellAlertIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function ReminderPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
@@ -78,7 +79,7 @@ export default function ReminderPage() {
           <div className="space-y-2">
             {pending.map(r => (
               <div key={r.id} className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3">
-                <span className="text-xl">⏰</span>
+                <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800">{r.message}</p>
                   <p className="text-xs text-gray-400">{new Date(r.trigger_at).toLocaleString('zh-CN')}</p>
@@ -97,7 +98,7 @@ export default function ReminderPage() {
           <div className="space-y-2">
             {triggered.map(r => (
               <div key={r.id} className="bg-gray-50 rounded-xl p-4 border flex items-center gap-3 opacity-60">
-                <span className="text-xl">✅</span>
+                <CheckCircleIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">{r.message}</p>
                   <p className="text-xs text-gray-400">{new Date(r.trigger_at).toLocaleString('zh-CN')}</p>

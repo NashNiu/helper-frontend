@@ -4,6 +4,7 @@ import {
   requestNotificationPermission,
 } from '../utils/notify';
 import type { NotifyPermission } from '../utils/notify';
+import { BellIcon } from '@heroicons/react/24/outline';
 
 const DISMISS_KEY = 'notify-banner-dismissed';
 
@@ -30,7 +31,7 @@ export default function NotificationBanner() {
 
   return (
     <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3 text-sm">
-      <span className="text-lg">🔔</span>
+      <BellIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
       <p className="flex-1 text-amber-800">
         开启系统通知后，即使你切到别的标签页或最小化浏览器，也能在到点时收到提醒。
       </p>

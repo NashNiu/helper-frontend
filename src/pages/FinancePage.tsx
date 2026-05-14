@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
 import { financeApi } from '../api/finance';
 import type { FinanceRecord } from '../api/finance';
 import FinanceCharts from '../components/FinanceCharts';
@@ -117,7 +118,9 @@ export default function FinancePage() {
       <div className="space-y-2">
         {records.map(r => (
           <div key={r.id} className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3">
-            <span className="text-lg">{r.amount > 0 ? '💰' : '💸'}</span>
+            {r.amount > 0
+              ? <ArrowTrendingUpIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+              : <ArrowTrendingDownIcon className="w-5 h-5 text-red-400 flex-shrink-0" />}
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className={`text-base font-semibold ${r.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>

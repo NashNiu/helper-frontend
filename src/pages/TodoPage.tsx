@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { PhotoIcon } from '@heroicons/react/24/outline';
 import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
 import type { Todo } from '../api/todo';
@@ -85,8 +86,9 @@ export default function TodoPage() {
             placeholder="添加待办..."
             className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
-          <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-            📷 {pendingFiles.length > 0 && `(${pendingFiles.length})`}
+          <button onClick={() => fileInputRef.current?.click()} className="px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-1">
+            <PhotoIcon className="w-4 h-4" />
+            {pendingFiles.length > 0 && <span>({pendingFiles.length})</span>}
           </button>
           <button onClick={handleCreate} disabled={loading} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">
             添加
