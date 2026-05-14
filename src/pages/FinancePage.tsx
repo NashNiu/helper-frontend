@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline';
 import { financeApi } from '../api/finance';
 import type { FinanceRecord } from '../api/finance';
 import FinanceCharts from '../components/FinanceCharts';
+import { getErrorMessage } from '../api/http';
 
 type Range = 'today' | 'week' | 'month';
 
@@ -34,8 +36,8 @@ export default function FinancePage() {
       const { from, to } = getRangeDates(r);
       const data = await financeApi.getAll(from, to);
       setRecords(data);
-    } catch {
-      setError('加载记录失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '加载记录失败，请重试'));
     }
   }, []);
 
@@ -46,8 +48,8 @@ export default function FinancePage() {
         const { from, to } = getRangeDates(range);
         const data = await financeApi.getAll(from, to);
         if (!cancelled) setRecords(data);
-      } catch {
-        if (!cancelled) setError('加载记录失败，请重试');
+      } catch (err) {
+        if (!cancelled) setError(getErrorMessage(err, '加载记录失败，请重试'));
       }
     })();
     return () => { cancelled = true; };
@@ -59,20 +61,21 @@ export default function FinancePage() {
     setLoading(true);
     try {
       await financeApi.create(input);
-      await loadRecords(range);  // reload so range filter is applied
+      await loadRecords(range);
       setInput('');
-    } catch {
-      setError('记录创建失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '记录创建失败，请重试'));
     } finally { setLoading(false); }
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm('确认删除这条记录？')) return;
     setError('');
     try {
       await financeApi.remove(id);
       setRecords(prev => prev.filter(r => r.id !== id));
-    } catch {
-      setError('删除失败，请重试');
+    } catch (err) {
+      setError(getErrorMessage(err, '删除失败，请重试'));
     }
   };
 
@@ -115,7 +118,9 @@ export default function FinancePage() {
       <div className="space-y-2">
         {records.map(r => (
           <div key={r.id} className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3">
-            <span className="text-lg">{r.amount > 0 ? '💰' : '💸'}</span>
+            {r.amount > 0
+              ? <ArrowTrendingUpIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
+              : <ArrowTrendingDownIcon className="w-5 h-5 text-red-400 flex-shrink-0" />}
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className={`text-base font-semibold ${r.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -125,7 +130,8 @@ export default function FinancePage() {
               </div>
               <p className="text-xs text-gray-400 mt-0.5">{r.note || r.raw_input} · {new Date(r.happened_at).toLocaleString('zh-CN')}</p>
             </div>
-            <button onClick={() => handleDelete(r.id)} className="text-xs text-red-400 hover:text-red-600">删除</button>
+            <button onClick={() => handleDelete(r.id)} aria-label="删除记录"
+              className="text-xs text-red-400 hover:text-red-600">删除</button>
           </div>
         ))}
         {records.length === 0 && <p className="text-sm text-gray-400 text-center py-8">暂无记录</p>}

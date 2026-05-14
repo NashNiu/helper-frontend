@@ -3,16 +3,26 @@ import type { Timer } from '../api/timer';
 
 export type ActiveTimerStatus = 'running' | 'paused' | 'done';
 
+export interface PomodoroMeta {
+  totalCycles: number;
+  currentCycle: number;
+  phase: 'work' | 'break';
+  workTimer: Timer;
+  breakTimer: Timer;
+}
+
 export interface ActiveTimerState {
   timer: Timer;
   remaining: number;
   status: ActiveTimerStatus;
   formatted: string;
+  pomodoro?: PomodoroMeta;
 }
 
 export interface ActiveTimerContextValue {
   active: ActiveTimerState | null;
   start: (timer: Timer) => void;
+  startPomodoro: (workTimer: Timer, breakTimer: Timer, cycles: number) => void;
   pause: () => void;
   resume: () => void;
   reset: () => void;

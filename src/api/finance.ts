@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { http } from './http';
 
 export interface FinanceRecord {
   id: number; raw_input: string; category: string;
@@ -7,8 +7,8 @@ export interface FinanceRecord {
 
 export const financeApi = {
   getAll: (from?: string, to?: string) =>
-    axios.get<FinanceRecord[]>('/api/finance', { params: { from, to } }).then(r => r.data),
+    http.get<FinanceRecord[]>('/api/finance', { params: { from, to } }).then(r => r.data),
   create: (input: string) =>
-    axios.post<FinanceRecord>('/api/finance', { input }).then(r => r.data),
-  remove: (id: number) => axios.delete(`/api/finance/${id}`),
+    http.post<FinanceRecord>('/api/finance', { input }).then(r => r.data),
+  remove: (id: number) => http.delete(`/api/finance/${id}`),
 };
