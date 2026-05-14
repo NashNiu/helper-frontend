@@ -22,8 +22,8 @@ export default function App() {
     <BrowserRouter>
       <RemindersProvider>
         <ActiveTimerProvider>
-          <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm border-b">
+          <div className="h-screen flex flex-col bg-gray-50">
+            <nav className="flex-shrink-0 bg-white shadow-sm border-b">
               <div className="max-w-3xl mx-auto px-4 flex gap-6 h-14 items-center">
                 <NavLink to="/" className="font-bold text-lg text-indigo-600">助手</NavLink>
                 {navItems.map(({ to, label }) => (
@@ -40,15 +40,19 @@ export default function App() {
                 ))}
               </div>
             </nav>
-            <main className="max-w-3xl mx-auto px-4 py-6">
-              <NotificationBanner />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/reminders" element={<ReminderPage />} />
-                <Route path="/timer" element={<TimerPage />} />
-                <Route path="/todo" element={<TodoPage />} />
-                <Route path="/finance" element={<FinancePage />} />
-              </Routes>
+            <main className="flex-1 min-h-0 overflow-hidden">
+              <div className="h-full max-w-3xl mx-auto px-4 py-6 flex flex-col">
+                <NotificationBanner />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/reminders" element={<ReminderPage />} />
+                    <Route path="/timer" element={<TimerPage />} />
+                    <Route path="/todo" element={<TodoPage />} />
+                    <Route path="/finance" element={<FinancePage />} />
+                  </Routes>
+                </div>
+              </div>
             </main>
             <TimerWidget />
           </div>

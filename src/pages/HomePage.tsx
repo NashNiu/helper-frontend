@@ -179,7 +179,7 @@ export default function HomePage() {
   }, [handleSubmit]);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-2xl font-bold text-gray-800">嗨，今天想记点什么？</h1>
         <p className="text-sm text-gray-500 mt-1">一句话搞定提醒、计时、待办和记账</p>
@@ -223,15 +223,15 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-shrink-0 flex items-center justify-between mb-2">
           <h2 className="text-sm font-medium text-gray-500">最近记录</h2>
           <button onClick={refreshAll} className="text-xs text-indigo-500 hover:underline">刷新</button>
         </div>
         {feed.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">还没有记录，从上面输入开始吧～</p>
         ) : (
-          <div className="space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-2">
             {feed.map(item => {
               const meta = TYPE_META[item.type];
               return (
