@@ -27,53 +27,27 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
 
   return (
     <div className="flex flex-col items-center gap-6 py-10">
-      <h2 className="text-xl font-semibold text-gray-700">{timer.name}</h2>
-      <div
-        className={`text-7xl font-mono font-bold ${status === "done" ? "text-emerald-600" : "text-indigo-600"}`}
-      >
+      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">{timer.name}</h2>
+      <div className={`text-7xl font-mono font-bold ${status === "done" ? "text-emerald-600" : "text-indigo-600"}`}>
         {formatted}
       </div>
-      {status === "done" && (
-        <p className="text-emerald-600 text-sm">计时已结束</p>
-      )}
+      {status === "done" && <p className="text-emerald-600 text-sm">计时已结束</p>}
       <div className="flex gap-3">
         {status !== "running" && (
-          <button
-            onClick={handleStart}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            {status === "idle"
-              ? "开始"
-              : status === "paused"
-                ? "继续"
-                : "重新开始"}
+          <button onClick={handleStart} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            {status === "idle" ? "开始" : status === "paused" ? "继续" : "重新开始"}
           </button>
         )}
         {status === "running" && (
-          <button
-            onClick={pause}
-            className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-          >
-            暂停
-          </button>
+          <button onClick={pause} className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">暂停</button>
         )}
-        <button
-          onClick={() => isThis && reset()}
-          disabled={!isThis}
-          className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-40"
-        >
+        <button onClick={() => isThis && reset()} disabled={!isThis}
+          className="px-6 py-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-40">
           重置
         </button>
       </div>
-      <p className="text-xs text-gray-400">
-        切换到其他页面时计时仍会继续，到点会有系统通知。
-      </p>
-      <button
-        onClick={handleBack}
-        className="text-sm text-gray-400 hover:text-gray-600 mt-4"
-      >
-        ← 返回选择
-      </button>
+      <p className="text-xs text-gray-400 dark:text-gray-500">切换到其他页面时计时仍会继续，到点会有系统通知。</p>
+      <button onClick={handleBack} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 mt-4">← 返回选择</button>
     </div>
   );
 }
@@ -108,51 +82,29 @@ function PomodoroSetup({
   return (
     <div className="flex flex-col items-center gap-8 py-10">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-gray-700">🍅 番茄工作法</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          {workMin} 分钟工作 · {breakMin} 分钟休息
-        </p>
+        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">🍅 番茄工作法</h2>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{workMin} 分钟工作 · {breakMin} 分钟休息</p>
       </div>
-
       <div className="flex flex-col items-center gap-3">
-        <p className="text-sm font-medium text-gray-600">选择循环次数</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">选择循环次数</p>
         <div className="flex items-center gap-5">
-          <button
-            onClick={() => setCycles((c) => Math.max(1, c - 1))}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-xl font-bold text-gray-600 flex items-center justify-center"
-          >
+          <button onClick={() => setCycles((c) => Math.max(1, c - 1))}
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xl font-bold text-gray-600 dark:text-gray-300 flex items-center justify-center">
             −
           </button>
-          <span className="text-4xl font-bold text-indigo-600 w-12 text-center">
-            {cycles}
-          </span>
-          <button
-            onClick={() => setCycles((c) => Math.min(8, c + 1))}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-xl font-bold text-gray-600 flex items-center justify-center"
-          >
+          <span className="text-4xl font-bold text-indigo-600 w-12 text-center">{cycles}</span>
+          <button onClick={() => setCycles((c) => Math.min(8, c + 1))}
+            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xl font-bold text-gray-600 dark:text-gray-300 flex items-center justify-center">
             +
           </button>
         </div>
         <div className="text-center mt-1 space-y-0.5">
-          <p className="text-sm text-gray-500">共 {totalMin} 分钟</p>
-          <p className="text-sm font-medium text-indigo-600">
-            预计 {endTimeStr} 结束
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">共 {totalMin} 分钟</p>
+          <p className="text-sm font-medium text-indigo-600">预计 {endTimeStr} 结束</p>
         </div>
       </div>
-
-      <button
-        onClick={handleStart}
-        className="px-10 py-3 bg-indigo-600 text-white text-base rounded-xl hover:bg-indigo-700 font-medium"
-      >
-        开始
-      </button>
-      <button
-        onClick={onBack}
-        className="text-sm text-gray-400 hover:text-gray-600"
-      >
-        ← 返回
-      </button>
+      <button onClick={handleStart} className="px-10 py-3 bg-indigo-600 text-white text-base rounded-xl hover:bg-indigo-700 font-medium">开始</button>
+      <button onClick={onBack} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">← 返回</button>
     </div>
   );
 }
@@ -180,87 +132,33 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
       <div className="text-center">
         <div className="flex items-center justify-center gap-1.5 mb-2">
           {Array.from({ length: pomodoro.totalCycles }, (_, i) => (
-            <div
-              key={i}
-              className={`h-2 rounded-full transition-all ${
-                i < pomodoro.currentCycle - 1
-                  ? "w-4 bg-indigo-400"
-                  : i === pomodoro.currentCycle - 1
-                    ? "w-6 bg-indigo-600"
-                    : "w-4 bg-gray-200"
-              }`}
-            />
+            <div key={i} className={`h-2 rounded-full transition-all ${
+              i < pomodoro.currentCycle - 1 ? "w-4 bg-indigo-400"
+              : i === pomodoro.currentCycle - 1 ? "w-6 bg-indigo-600"
+              : "w-4 bg-gray-200 dark:bg-gray-700"
+            }`} />
           ))}
         </div>
-        <p className="text-xs text-gray-400">
-          第 {pomodoro.currentCycle} 轮 / 共 {pomodoro.totalCycles} 轮
-        </p>
-        <p className={`text-base font-semibold mt-1 ${phaseColor}`}>
-          {phaseLabel}
-        </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">第 {pomodoro.currentCycle} 轮 / 共 {pomodoro.totalCycles} 轮</p>
+        <p className={`text-base font-semibold mt-1 ${phaseColor}`}>{phaseLabel}</p>
       </div>
-
-      <div
-        className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600" : isTransitioning ? "text-gray-400" : phaseColor}`}
-      >
+      <div className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600" : isTransitioning ? "text-gray-400 dark:text-gray-500" : phaseColor}`}>
         {active.formatted}
       </div>
-
-      {isAllDone && (
-        <p className="text-emerald-600 font-medium">🎉 全部完成，辛苦了！</p>
-      )}
-      {isTransitioning && (
-        <p className="text-gray-400 text-sm">正在切换阶段…</p>
-      )}
-
+      {isAllDone && <p className="text-emerald-600 font-medium">🎉 全部完成，辛苦了！</p>}
+      {isTransitioning && <p className="text-gray-400 dark:text-gray-500 text-sm">正在切换阶段…</p>}
       {!isAllDone && !isTransitioning && (
         <div className="flex gap-3">
-          {isRunning && (
-            <button
-              onClick={pause}
-              className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-            >
-              暂停
-            </button>
-          )}
-          {isPaused && (
-            <button
-              onClick={resume}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              继续
-            </button>
-          )}
-          <button
-            onClick={reset}
-            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-          >
-            重置本阶段
-          </button>
+          {isRunning && <button onClick={pause} className="px-6 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">暂停</button>}
+          {isPaused && <button onClick={resume} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">继续</button>}
+          <button onClick={reset} className="px-6 py-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">重置本阶段</button>
         </div>
       )}
-
       {isAllDone && (
-        <button
-          onClick={() => {
-            clear();
-            onBack();
-          }}
-          className="px-8 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-        >
-          完成
-        </button>
+        <button onClick={() => { clear(); onBack(); }} className="px-8 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">完成</button>
       )}
-
-      <p className="text-xs text-gray-400">
-        切换到其他页面时计时继续，到点自动开始下一阶段。
-      </p>
-      <button
-        onClick={onBack}
-        className="text-sm text-gray-400 hover:text-gray-600"
-      >
-        ← 返回选择
-      </button>
+      <p className="text-xs text-gray-400 dark:text-gray-500">切换到其他页面时计时继续，到点自动开始下一阶段。</p>
+      <button onClick={onBack} className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">← 返回选择</button>
     </div>
   );
 }
@@ -326,94 +224,50 @@ export default function TimerPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 bg-clip-text text-transparent">计时器</h1>
+      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-300 bg-clip-text text-transparent">计时器</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {timers.map((t) => {
           const isPomodoro = t.type === "pomodoro";
-          const isActiveTimer =
-            active && !active.pomodoro && active.timer.id === t.id;
+          const isActiveTimer = active && !active.pomodoro && active.timer.id === t.id;
           const isPomodoroActive = isPomodoro && !!active?.pomodoro;
-
           return (
-            <div
-              key={t.id}
-              className={`bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 shadow-sm border border-purple-100 hover:shadow-md transition ${
-                isActiveTimer || isPomodoroActive
-                  ? "ring-2 ring-indigo-300"
-                  : ""
-              }`}
-            >
-              <button
-                onClick={() => setSelected(t)}
-                className="w-full text-left"
-              >
-                <p className="font-semibold text-gray-800">{t.name}</p>
-                {isPomodoro ? (
-                  <p className="text-sm text-gray-500 mt-1">番茄工作法</p>
-                ) : (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {Math.floor(t.duration_seconds / 60)} 分钟
-                  </p>
-                )}
+            <div key={t.id} className={`bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900 rounded-xl p-4 shadow-sm border border-purple-100 dark:border-purple-900/40 hover:shadow-md transition ${isActiveTimer || isPomodoroActive ? "ring-2 ring-indigo-300" : ""}`}>
+              <button onClick={() => setSelected(t)} className="w-full text-left">
+                <p className="font-semibold text-gray-800 dark:text-gray-100">{t.name}</p>
+                {isPomodoro
+                  ? <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">番茄工作法</p>
+                  : <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{Math.floor(t.duration_seconds / 60)} 分钟</p>}
                 {isActiveTimer && (
                   <p className="text-xs text-indigo-600 mt-1">
-                    {active.status === "running"
-                      ? `运行中 ${active.formatted}`
-                      : active.status === "paused"
-                        ? `已暂停 ${active.formatted}`
-                        : "已完成"}
+                    {active.status === "running" ? `运行中 ${active.formatted}` : active.status === "paused" ? `已暂停 ${active.formatted}` : "已完成"}
                   </p>
                 )}
                 {isPomodoroActive && (
                   <p className="text-xs text-indigo-600 mt-1">
-                    {active!.pomodoro!.phase === "work" ? "🍅" : "☕"} 第{" "}
-                    {active!.pomodoro!.currentCycle}/
-                    {active!.pomodoro!.totalCycles} 轮
-                    {active!.status === "running"
-                      ? ` · ${active!.formatted}`
-                      : " · 已暂停"}
+                    {active!.pomodoro!.phase === "work" ? "🍅" : "☕"} 第 {active!.pomodoro!.currentCycle}/{active!.pomodoro!.totalCycles} 轮
+                    {active!.status === "running" ? ` · ${active!.formatted}` : " · 已暂停"}
                   </p>
                 )}
               </button>
               {!t.is_preset && (
-                <button
-                  onClick={() => handleDelete(t.id)}
-                  className="mt-2 text-xs text-red-400 hover:text-red-600"
-                >
-                  删除
-                </button>
+                <button onClick={() => handleDelete(t.id)} className="mt-2 text-xs text-red-400 hover:text-red-600">删除</button>
               )}
             </div>
           );
         })}
       </div>
 
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 shadow-sm border border-purple-100">
-        <h3 className="font-medium text-gray-700 mb-3">自定义计时器</h3>
+      <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900 rounded-xl p-4 shadow-sm border border-purple-100 dark:border-purple-900/40">
+        <h3 className="font-medium text-gray-700 dark:text-gray-200 mb-3">自定义计时器</h3>
         {error && <p className="text-sm text-red-500 mb-2">{error}</p>}
         <div className="flex gap-2">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="名称"
-            className="rounded-lg px-3 py-2 text-sm flex-1 bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
-          />
-          <input
-            value={newMinutes}
-            onChange={(e) => setNewMinutes(e.target.value)}
-            placeholder="分钟数"
-            type="number"
-            min="1"
-            className="rounded-lg px-3 py-2 text-sm w-24 bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
-          />
-          <button
-            onClick={handleCreate}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700"
-          >
-            添加
-          </button>
+          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="名称"
+            className="rounded-lg px-3 py-2 text-sm flex-1 bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition" />
+          <input value={newMinutes} onChange={(e) => setNewMinutes(e.target.value)} placeholder="分钟数" type="number" min="1"
+            className="rounded-lg px-3 py-2 text-sm w-24 bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-300 transition" />
+          <button onClick={handleCreate} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700">添加</button>
         </div>
       </div>
     </div>
