@@ -112,6 +112,10 @@ export function useResource<T>(
       setData(e.data);
       setError(e.error);
       setLoading(Boolean(e.promise));
+      const fresh = e.data !== undefined && (ttl === 0 || Date.now() - e.fetchedAt < ttl);
+      if (!fresh && !e.promise) {
+        void refresh();
+      }
     };
     e.listeners.add(sync);
 

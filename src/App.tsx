@@ -27,7 +27,7 @@ export default function App() {
       <RemindersProvider>
         <ActiveTimerProvider>
           <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-            <nav className="flex-shrink-0 bg-white shadow-sm border-b dark:bg-gray-900 dark:border-gray-800">
+            <nav className="flex-shrink-0 bg-white shadow-sm border-b border-gray-100 dark:bg-gray-900 dark:border-gray-800">
               <div className="max-w-3xl mx-auto px-4 flex gap-6 h-14 items-center">
                 <NavLink to="/" className="font-bold text-lg text-indigo-600 dark:text-indigo-400">助手</NavLink>
                 {navItems.map(({ to, label }) => (
