@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useConfirm } from '../hooks/useConfirm';
 import { reminderApi } from '../api/reminder';
 import type { Reminder } from '../api/reminder';
 import { useRemindersContext } from '../contexts/useRemindersContext';
@@ -12,6 +13,7 @@ export default function ReminderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { scheduleOne } = useRemindersContext();
+  const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +44,7 @@ export default function ReminderPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('确认删除这条提醒？')) return;
+    if (!await confirm('确认删除这条提醒？')) return;
     try {
       await reminderApi.remove(id);
       setReminders(prev => prev.filter(r => r.id !== id));
@@ -110,6 +112,7 @@ export default function ReminderPage() {
           </div>
         </div>
       )}
+      {dialog}
     </div>
   );
 }

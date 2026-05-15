@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { PlusIcon, MinusIcon } from "@heroicons/react/24/outline";
+import { useConfirm } from "../hooks/useConfirm";
 import { financeApi } from "../api/finance";
 import type { FinanceRecord } from "../api/finance";
 import FinanceCharts from "../components/FinanceCharts";
@@ -35,6 +36,7 @@ export default function FinancePage() {
   const [range, setRange] = useState<Range>("week");
   const [showChart, setShowChart] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, dialog } = useConfirm();
 
   const loadRecords = useCallback(async (r: Range) => {
     setError("");
@@ -79,7 +81,7 @@ export default function FinancePage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("确认删除这条记录？")) return;
+    if (!await confirm("确认删除这条记录？")) return;
     setError("");
     try {
       await financeApi.remove(id);
@@ -90,6 +92,7 @@ export default function FinancePage() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
         收支记录
@@ -182,6 +185,8 @@ export default function FinancePage() {
         )}
       </div>
     </div>
+    {dialog}
+    </>
   );
 }
 

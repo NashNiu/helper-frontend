@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useConfirm } from '../hooks/useConfirm';
 import { PhotoIcon } from '@heroicons/react/24/outline';
 import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
@@ -12,6 +13,7 @@ export default function TodoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { confirm, dialog } = useConfirm();
 
   useEffect(() => {
     (async () => {
@@ -49,7 +51,7 @@ export default function TodoPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('确认删除这条待办？相关图片也会一并删除。')) return;
+    if (!await confirm('确认删除这条待办？相关图片也会一并删除。')) return;
     setError('');
     try {
       await todoApi.remove(id);
@@ -108,6 +110,7 @@ export default function TodoPage() {
       {done.length > 0 && (
         <TodoList title="已完成" items={done} onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage} />
       )}
+      {dialog}
     </div>
   );
 }
