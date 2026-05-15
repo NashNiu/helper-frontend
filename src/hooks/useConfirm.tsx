@@ -11,9 +11,14 @@ export function useConfirm() {
   const handleConfirm = () => { pending?.resolve(true); setPending(null); };
   const handleCancel = () => { pending?.resolve(false); setPending(null); };
 
-  const dialog = pending
-    ? <ConfirmDialog message={pending.message} onConfirm={handleConfirm} onCancel={handleCancel} />
-    : null;
+  const dialog = (
+    <ConfirmDialog
+      open={pending !== null}
+      message={pending?.message ?? ''}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
+  );
 
   return { confirm, dialog };
 }

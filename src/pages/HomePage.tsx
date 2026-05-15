@@ -16,6 +16,9 @@ import { requestNotificationPermission } from '../utils/notify';
 import { getErrorMessage } from '../api/http';
 import { useResource, invalidate } from '../hooks/useResource';
 import { CACHE_KEYS } from '../api/cacheKeys';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 
 const TYPE_META: Record<AssistantType, { label: string; Icon: React.ElementType; iconColor: string; color: string; route: string; gradient: string; border: string }> = {
   reminder: { label: '提醒',  Icon: BellAlertIcon,                iconColor: 'text-orange-400',  color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',   route: '/reminders', gradient: 'bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-gray-900',   border: 'border border-orange-100 dark:border-orange-900/40' },
@@ -186,48 +189,51 @@ export default function HomePage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">一句话搞定提醒、计时、待办和记账</p>
       </div>
 
-      <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900 rounded-2xl shadow-sm border border-indigo-100 dark:border-indigo-900/40 p-4 space-y-3">
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="例：10 分钟后提醒我喝水 / 午饭花了 25 元 / 买牛奶 / 25 分钟番茄钟"
-          rows={2}
-          className="w-full resize-none rounded-xl px-3 py-2 text-sm bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
-        />
+      <Card className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900 border-indigo-100 dark:border-indigo-900/40 shadow-sm rounded-2xl">
+        <CardContent className="p-4 space-y-3">
+          <Textarea
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="例：10 分钟后提醒我喝水 / 午饭花了 25 元 / 买牛奶 / 25 分钟番茄钟"
+            rows={2}
+            className="resize-none rounded-xl bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:ring-2 focus:ring-indigo-300 transition"
+          />
 
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map(q => (
-            <button
-              key={q.label}
-              onClick={() => applyQuick(q)}
-              type="button"
-              className="text-xs px-3 py-1.5 rounded-full bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-700 dark:bg-gray-800 dark:hover:bg-indigo-900/40 dark:text-gray-300 dark:hover:text-indigo-300 transition"
+          <div className="flex flex-wrap gap-2">
+            {QUICK_ACTIONS.map(q => (
+              <Button
+                key={q.label}
+                onClick={() => applyQuick(q)}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-full text-xs px-3 py-1.5 h-auto bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-700 dark:bg-gray-800 dark:hover:bg-indigo-900/40 dark:text-gray-300 dark:hover:text-indigo-300 border-0"
+              >
+                + {q.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <span className={`text-xs ${status.kind === 'err' ? 'text-red-500' : status.kind === 'ok' ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500'}`}>
+              {status.text || '回车发送，Shift+回车换行'}
+            </span>
+            <Button
+              onClick={handleSubmit}
+              disabled={!input.trim() || submitting}
             >
-              + {q.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <span className={`text-xs ${status.kind === 'err' ? 'text-red-500' : status.kind === 'ok' ? 'text-emerald-600' : 'text-gray-400 dark:text-gray-500'}`}>
-            {status.text || '回车发送，Shift+回车换行'}
-          </span>
-          <button
-            onClick={handleSubmit}
-            disabled={!input.trim() || submitting}
-            className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {submitting ? '处理中…' : '发送'}
-          </button>
-        </div>
-      </div>
+              {submitting ? '处理中…' : '发送'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-shrink-0 flex items-center justify-between mb-2">
           <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">最近记录</h2>
-          <button onClick={refreshAll} className="text-xs text-indigo-500 hover:underline">刷新</button>
+          <Button onClick={refreshAll} variant="ghost" size="sm" className="text-xs text-indigo-500 h-auto py-1 px-2">刷新</Button>
         </div>
         {feed.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">还没有记录，从上面输入开始吧～</p>
