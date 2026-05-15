@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
-import {
-  getNotificationPermission,
-  requestNotificationPermission,
-} from '../utils/notify';
+import { getNotificationPermission, requestNotificationPermission } from '../utils/notify';
 import type { NotifyPermission } from '../utils/notify';
 import { BellIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
 
 const DISMISS_KEY = 'notify-banner-dismissed';
 
@@ -30,23 +28,17 @@ export default function NotificationBanner() {
   if (permission !== 'default' || dismissed) return null;
 
   return (
-    <div className="mb-4 bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 rounded-xl p-3 flex items-center gap-3 text-sm">
+    <div className="mb-4 rounded-xl border bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 p-3 flex items-center gap-3 text-sm">
       <BellIcon className="w-5 h-5 text-amber-500 flex-shrink-0" />
       <p className="flex-1 text-amber-800 dark:text-amber-200">
         开启系统通知后，即使你切到别的标签页或最小化浏览器，也能在到点时收到提醒。
       </p>
-      <button
-        onClick={handleEnable}
-        className="px-3 py-1 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white text-xs rounded-lg"
-      >
+      <Button size="sm" onClick={handleEnable} className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white border-0">
         开启
-      </button>
-      <button
-        onClick={handleDismiss}
-        className="text-xs text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
-      >
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200">
         稍后
-      </button>
+      </Button>
     </div>
   );
 }

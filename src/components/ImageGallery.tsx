@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { TodoImage } from '../api/todo';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Props {
   images: TodoImage[];
@@ -16,6 +17,7 @@ export default function ImageGallery({ images, onDelete }: Props) {
     ? Math.min(lightboxIndex, sorted.length - 1)
     : null;
 
+  const { confirm, dialog } = useConfirm();
   const close = useCallback(() => setLightboxIndex(null), []);
   const prev = useCallback(() => setLightboxIndex(i => Math.max(0, (i ?? 0) - 1)), []);
   const next = useCallback(() => {
@@ -40,16 +42,17 @@ export default function ImageGallery({ images, onDelete }: Props) {
     };
   }, [isOpen, close, prev, next]);
 
-  const handleDelete = useCallback((imageId: number) => {
+  const handleDelete = useCallback(async (imageId: number) => {
     if (!onDelete) return;
-    if (!window.confirm('确认删除这张图片？此操作不可撤销。')) return;
+    if (!await confirm('确认删除这张图片？此操作不可撤销。')) return;
     onDelete(imageId);
-  }, [onDelete]);
+  }, [onDelete, confirm]);
 
   if (images.length === 0) return null;
 
   return (
     <>
+      {dialog}
       <div className="flex flex-wrap gap-2 mt-2">
         {sorted.map((img, i) => (
           <div key={img.id} className="relative group">

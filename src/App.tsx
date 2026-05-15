@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
 import { useTheme } from './hooks/useTheme';
 import HomePage from './pages/HomePage';
 import ReminderPage from './pages/ReminderPage';
@@ -26,8 +27,8 @@ export default function App() {
     <BrowserRouter>
       <RemindersProvider>
         <ActiveTimerProvider>
-          <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-            <nav className="flex-shrink-0 bg-white shadow-sm border-b dark:bg-gray-900 dark:border-gray-800">
+          <div className="h-screen flex flex-col bg-background text-foreground">
+            <nav className="flex-shrink-0 bg-background border-b">
               <div className="max-w-3xl mx-auto px-4 flex gap-6 h-14 items-center">
                 <NavLink to="/" className="font-bold text-lg text-indigo-600 dark:text-indigo-400">助手</NavLink>
                 {navItems.map(({ to, label }) => (
@@ -36,21 +37,21 @@ export default function App() {
                     to={to}
                     end={to === '/'}
                     className={({ isActive }) =>
-                      `text-sm font-medium transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100'}`
+                      `text-sm font-medium transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground hover:text-foreground'}`
                     }
                   >
                     {label}
                   </NavLink>
                 ))}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={toggleTheme}
                   aria-label="切换主题"
-                  className="ml-auto p-1.5 rounded-lg text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition"
+                  className="ml-auto"
                 >
-                  {theme === 'dark'
-                    ? <SunIcon className="w-5 h-5" />
-                    : <MoonIcon className="w-5 h-5" />}
-                </button>
+                  {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                </Button>
               </div>
             </nav>
             <main className="flex-1 min-h-0 overflow-hidden">
