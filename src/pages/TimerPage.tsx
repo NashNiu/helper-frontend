@@ -264,7 +264,7 @@ export default function TimerPage() {
           return (
             <Card
               key={t.id}
-              className={`hover:bg-muted transition-colors ${isActiveTimer || isPomodoroActive ? "ring-2 ring-foreground/20" : ""}`}
+              className={`transition-colors ${isActiveTimer || isPomodoroActive ? "border-foreground/20 bg-muted/50" : "hover:bg-muted"}`}
             >
               <CardContent className="p-4">
                 <button onClick={() => setSelected(t)} className="w-full text-left cursor-pointer">
