@@ -29,29 +29,43 @@ export default function App() {
         <ActiveTimerProvider>
           <div className="h-screen flex flex-col bg-background text-foreground">
             <nav className="flex-shrink-0 bg-background border-b">
-              <div className="max-w-3xl mx-auto px-4 flex gap-6 h-14 items-center">
-                <NavLink to="/" className="font-semibold text-base text-foreground tracking-tight">助手</NavLink>
-                {navItems.map(({ to, label }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={to === '/'}
-                    className={({ isActive }) =>
-                      `text-sm font-medium transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`
-                    }
-                  >
-                    {label}
-                  </NavLink>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  aria-label="切换主题"
-                  className="ml-auto"
+              <div className="max-w-3xl mx-auto h-12 flex items-center">
+                <NavLink
+                  to="/"
+                  className="flex-shrink-0 font-semibold text-sm text-foreground tracking-tight px-4 whitespace-nowrap"
                 >
-                  {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-                </Button>
+                  助手
+                </NavLink>
+                <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex items-center gap-1 px-1">
+                    {navItems.map(({ to, label }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        end={to === '/'}
+                        className={({ isActive }) =>
+                          `px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                            isActive
+                              ? 'text-foreground bg-muted'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`
+                        }
+                      >
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-shrink-0 px-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    aria-label="切换主题"
+                  >
+                    {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                  </Button>
+                </div>
               </div>
             </nav>
             <main className="flex-1 min-h-0 overflow-hidden">
