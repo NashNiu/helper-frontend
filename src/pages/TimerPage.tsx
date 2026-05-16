@@ -126,7 +126,7 @@ function PomodoroSetup({
 
 // ── 番茄钟进行中显示 ──────────────────────────────────────────────────────────
 function PomodoroDisplay({ onBack }: { onBack: () => void }) {
-  const { active, pause, resume, reset, clear } = useActiveTimer();
+  const { active, pause, resume, reset, clear, advancePomodoro } = useActiveTimer();
   if (!active?.pomodoro) return null;
 
   const { pomodoro } = active;
@@ -137,10 +137,12 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
     active.status === "done" &&
     isWork &&
     pomodoro.currentCycle >= pomodoro.totalCycles;
-  const isTransitioning = active.status === "done" && !isAllDone;
+  const isWaitingConfirm = active.status === "done" && !isAllDone;
 
   const phaseColor = isWork ? "text-foreground" : "text-emerald-600 dark:text-emerald-400";
-  const phaseLabel = isWork ? "工作中" : "休息中";
+  const phaseLabel = isWork
+    ? isWaitingConfirm ? "工作结束" : "工作中"
+    : isWaitingConfirm ? "休息结束" : "休息中";
 
   return (
     <div className="flex flex-col items-center gap-6 py-8">
@@ -157,17 +159,37 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
         <p className="text-xs text-muted-foreground">第 {pomodoro.currentCycle} 轮 / 共 {pomodoro.totalCycles} 轮</p>
         <p className={`text-base font-semibold mt-1 ${phaseColor}`}>{phaseLabel}</p>
       </div>
-      <div className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600 dark:text-emerald-400" : isTransitioning ? "text-muted-foreground" : phaseColor}`}>
+
+      <div className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600 dark:text-emerald-400" : phaseColor}`}>
         {active.formatted}
       </div>
-      {isAllDone && <p className="text-emerald-600 dark:text-emerald-400 font-medium">全部完成，辛苦了！</p>}
-      {isTransitioning && <p className="text-muted-foreground text-sm">正在切换阶段…</p>}
-      {!isAllDone && !isTransitioning && (
+
+      {isAllDone && (
+        <>
+          <p className="text-emerald-600 dark:text-emerald-400 font-medium">全部完成，辛苦了！</p>
+          <Button size="lg" className="px-8" onClick={() => { clear(); onBack(); }}>
+            完成
+          </Button>
+        </>
+      )}
+
+      {isWaitingConfirm && (
+        <div className="flex flex-col items-center gap-3">
+          <Button size="lg" className="px-8" onClick={advancePomodoro}>
+            {isWork
+              ? `开始休息（${Math.round(pomodoro.breakTimer.duration_seconds / 60)} 分钟）`
+              : `开始第 ${pomodoro.currentCycle + 1} 轮工作`}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { clear(); onBack(); }} className="text-muted-foreground">
+            结束番茄钟
+          </Button>
+        </div>
+      )}
+
+      {!isAllDone && !isWaitingConfirm && (
         <div className="flex gap-3">
           {isRunning && (
-            <Button onClick={pause} size="lg" variant="outline">
-              暂停
-            </Button>
+            <Button onClick={pause} size="lg" variant="outline">暂停</Button>
           )}
           {isPaused && (
             <Button onClick={resume} size="lg">继续</Button>
@@ -175,16 +197,8 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
           <Button variant="outline" size="lg" onClick={reset}>重置本阶段</Button>
         </div>
       )}
-      {isAllDone && (
-        <Button
-          size="lg"
-          className="px-8"
-          onClick={() => { clear(); onBack(); }}
-        >
-          完成
-        </Button>
-      )}
-      <p className="text-xs text-muted-foreground">切换到其他页面时计时继续，到点自动开始下一阶段。</p>
+
+      <p className="text-xs text-muted-foreground">切换到其他页面时计时继续，到点后等待确认。</p>
       <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
         ← 返回选择
       </Button>

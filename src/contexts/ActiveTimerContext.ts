@@ -27,6 +27,7 @@ export interface ActiveTimerContextValue {
   resume: () => void;
   reset: () => void;
   clear: () => void;
+  advancePomodoro: () => void;
 }
 
 export const ActiveTimerContext = createContext<ActiveTimerContextValue | null>(null);
