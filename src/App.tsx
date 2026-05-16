@@ -30,14 +30,14 @@ export default function App() {
           <div className="h-screen flex flex-col bg-background text-foreground">
             <nav className="flex-shrink-0 bg-background border-b">
               <div className="max-w-3xl mx-auto px-4 flex gap-6 h-14 items-center">
-                <NavLink to="/" className="font-bold text-lg text-indigo-600 dark:text-indigo-400">助手</NavLink>
+                <NavLink to="/" className="font-semibold text-base text-foreground tracking-tight">助手</NavLink>
                 {navItems.map(({ to, label }) => (
                   <NavLink
                     key={to}
                     to={to}
                     end={to === '/'}
                     className={({ isActive }) =>
-                      `text-sm font-medium transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground hover:text-foreground'}`
+                      `text-sm font-medium transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`
                     }
                   >
                     {label}

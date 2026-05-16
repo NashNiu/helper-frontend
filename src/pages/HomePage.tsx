@@ -31,55 +31,33 @@ const TYPE_META: Record<
   {
     label: string;
     Icon: React.ElementType;
-    iconColor: string;
-    color: string;
+    dot: string;
     route: string;
-    gradient: string;
-    border: string;
   }
 > = {
   reminder: {
     label: "提醒",
     Icon: BellAlertIcon,
-    iconColor: "text-orange-400",
-    color:
-      "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
+    dot: "bg-amber-400",
     route: "/reminders",
-    gradient:
-      "bg-gradient-to-r from-orange-50 to-white dark:from-orange-950/30 dark:to-gray-900",
-    border: "border border-orange-100 dark:border-orange-900/40",
   },
   timer: {
     label: "计时器",
     Icon: ClockIcon,
-    iconColor: "text-purple-400",
-    color:
-      "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300",
+    dot: "bg-violet-400",
     route: "/timer",
-    gradient:
-      "bg-gradient-to-r from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900",
-    border: "border border-purple-100 dark:border-purple-900/40",
   },
   todo: {
     label: "待办",
     Icon: ClipboardDocumentCheckIcon,
-    iconColor: "text-blue-400",
-    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+    dot: "bg-sky-400",
     route: "/todo",
-    gradient:
-      "bg-gradient-to-r from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900",
-    border: "border border-blue-100 dark:border-blue-900/40",
   },
   finance: {
     label: "收支",
     Icon: BanknotesIcon,
-    iconColor: "text-emerald-400",
-    color:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+    dot: "bg-emerald-400",
     route: "/finance",
-    gradient:
-      "bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950/30 dark:to-gray-900",
-    border: "border border-emerald-100 dark:border-emerald-900/40",
   },
 };
 
@@ -260,15 +238,15 @@ export default function HomePage() {
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-violet-400 dark:from-indigo-400 dark:to-violet-300 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-semibold text-foreground">
           嗨，今天想记点什么？
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           一句话搞定提醒、计时、待办和记账
         </p>
       </div>
 
-      <Card className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-gray-900  dark:border-indigo-900/40 shadow-sm rounded-2xl">
+      <Card className="rounded-2xl">
         <CardContent className="p-4 space-y-3">
           <Textarea
             ref={inputRef}
@@ -277,10 +255,10 @@ export default function HomePage() {
             onKeyDown={handleKeyDown}
             placeholder="例：10 分钟后提醒我喝水 / 午饭花了 25 元 / 买牛奶 / 25 分钟番茄钟"
             rows={2}
-            className="resize-none rounded-xl bg-white/80 focus:bg-white dark:bg-gray-800/80 dark:focus:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 focus:ring-2 focus:ring-indigo-300 transition"
+            className="resize-none"
           />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {QUICK_ACTIONS.map((q) => (
               <Button
                 key={q.label}
@@ -288,22 +266,23 @@ export default function HomePage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-full text-xs px-3 py-1.5 h-auto bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-700 dark:bg-gray-800 dark:hover:bg-indigo-900/40 dark:text-gray-300 dark:hover:text-indigo-300 border-0"
+                className="rounded-full text-xs h-7 px-3"
               >
-                + {q.label}
+                {q.label}
               </Button>
             ))}
           </div>
 
           <div className="flex items-center justify-between pt-1">
             <span
-              className={`text-xs ${status.kind === "err" ? "text-red-500" : status.kind === "ok" ? "text-emerald-600" : "text-gray-400 dark:text-gray-500"}`}
+              className={`text-xs ${status.kind === "err" ? "text-destructive" : status.kind === "ok" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}
             >
               {status.text || "回车发送，Shift+回车换行"}
             </span>
             <Button
               onClick={handleSubmit}
               disabled={!input.trim() || submitting}
+              size="sm"
             >
               {submitting ? "处理中…" : "发送"}
             </Button>
@@ -313,20 +292,20 @@ export default function HomePage() {
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-shrink-0 flex items-center justify-between mb-2">
-          <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <h2 className="text-sm font-medium text-muted-foreground">
             最近记录
           </h2>
           <Button
             onClick={refreshAll}
             variant="ghost"
             size="sm"
-            className="text-xs text-indigo-500 h-auto py-1 px-2"
+            className="text-xs h-auto py-1 px-2"
           >
             刷新
           </Button>
         </div>
         {feed.length === 0 ? (
-          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+          <p className="text-sm text-muted-foreground text-center py-8">
             还没有记录，从上面输入开始吧～
           </p>
         ) : (
@@ -337,27 +316,23 @@ export default function HomePage() {
                 <button
                   key={item.id}
                   onClick={() => navigate(meta.route)}
-                  className={`w-full text-left rounded-xl p-3 shadow-sm hover:shadow-md transition flex items-start gap-3 ${meta.gradient} ${meta.border}`}
+                  className="w-full text-left rounded-xl p-3 hover:bg-muted transition-colors flex items-start gap-3 border border-border bg-card cursor-pointer"
                 >
-                  <meta.Icon
-                    className={`w-5 h-5 mt-0.5 flex-shrink-0 ${meta.iconColor}`}
-                  />
+                  <span className={`mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${meta.color}`}
-                      >
+                      <span className="text-xs text-muted-foreground shrink-0">
                         {meta.label}
                       </span>
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {item.title}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate">
                         {item.subtitle}
                       </p>
-                      <p className="text-xs text-gray-300 dark:text-gray-600 flex-shrink-0">
+                      <p className="text-xs text-muted-foreground/50 flex-shrink-0">
                         {new Date(item.timestamp).toLocaleString("zh-CN", {
                           month: "numeric",
                           day: "numeric",
@@ -367,7 +342,7 @@ export default function HomePage() {
                       </p>
                     </div>
                   </div>
-                  <ChevronRightIcon className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0 mt-0.5" />
+                  <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 mt-0.5" />
                 </button>
               );
             })}

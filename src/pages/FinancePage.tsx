@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowUpCircleIcon, ArrowDownCircleIcon } from "@heroicons/react/24/outline";
 import { useConfirm } from "../hooks/useConfirm";
 import { financeApi } from "../api/finance";
 import type { FinanceRecord } from "../api/finance";
@@ -98,12 +97,10 @@ export default function FinancePage() {
   return (
     <>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-          收支记录
-        </h1>
+        <h1 className="text-2xl font-semibold text-foreground">收支记录</h1>
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Card className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-gray-900 border-emerald-100 dark:border-emerald-900/40">
+        <Card>
           <CardContent className="p-4">
             <div className="flex gap-2">
               <Input
@@ -144,26 +141,15 @@ export default function FinancePage() {
           {records.map((r) => (
             <Card
               key={r.id}
-              className={
-                r.amount > 0
-                  ? "bg-gradient-to-r from-green-50 to-white dark:from-green-950/30 dark:to-gray-900 border-green-100 dark:border-green-900/40"
-                  : "bg-gradient-to-r from-red-50 to-white dark:from-red-950/30 dark:to-gray-900 border-red-100 dark:border-red-900/40"
-              }
+              className={r.amount > 0 ? "border-l-[3px] border-l-emerald-500" : "border-l-[3px] border-l-red-400"}
             >
               <CardContent className="p-4 flex items-center gap-3">
-                {r.amount > 0 ? (
-                  <ArrowUpCircleIcon className="w-5 h-5 text-green-500 dark:text-green-400 flex-shrink-0" />
-                ) : (
-                  <ArrowDownCircleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
-                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-base font-bold ${r.amount > 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}
-                    >
+                    <span className={`text-base font-semibold ${r.amount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                       {r.amount > 0 ? "+" : ""}¥{Math.abs(r.amount).toFixed(2)}
                     </span>
-                    <Badge variant="outline">{r.category}</Badge>
+                    <Badge variant="outline" className="text-xs font-normal">{r.category}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {r.note || r.raw_input} · {new Date(r.happened_at).toLocaleString("zh-CN")}
@@ -174,7 +160,7 @@ export default function FinancePage() {
                   size="xs"
                   onClick={() => handleDelete(r.id)}
                   aria-label="删除记录"
-                  className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 shrink-0"
+                  className="text-destructive hover:text-destructive shrink-0"
                 >
                   删除
                 </Button>

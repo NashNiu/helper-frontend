@@ -152,7 +152,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     }, 500);
   }, [clearInterval$, fireDone]);
 
-  // Auto-transition between Pomodoro phases
+  // Notify when a Pomodoro phase ends — no auto-transition, user must confirm
   useEffect(() => {
     if (!active || active.status !== 'done' || !active.pomodoro) return;
     const { pomodoro } = active;
@@ -162,55 +162,27 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
 
     if (pomodoro.phase === 'work') {
       if (pomodoro.currentCycle >= pomodoro.totalCycles) {
-        // All cycles complete
         showSystemNotification({
-          title: '🎉 全部完成',
+          title: '全部完成',
           body: `${pomodoro.totalCycles} 轮番茄钟已完成，辛苦了！`,
           tag: 'pomodoro-all-done',
         });
-        beep();
       } else {
-        // Start break
         showSystemNotification({
-          title: '☕ 去休息',
-          body: `第 ${pomodoro.currentCycle} 轮完成，休息 ${Math.round(pomodoro.breakTimer.duration_seconds / 60)} 分钟`,
-          tag: 'pomodoro-break',
+          title: '工作阶段结束',
+          body: `第 ${pomodoro.currentCycle} 轮完成，确认后开始休息`,
+          tag: 'pomodoro-work-done',
         });
-        beep();
-        const breakState: ActiveTimerState = {
-          timer: pomodoro.breakTimer,
-          remaining: pomodoro.breakTimer.duration_seconds,
-          status: 'running',
-          formatted: formatRemaining(pomodoro.breakTimer.duration_seconds),
-          pomodoro: { ...pomodoro, phase: 'break' },
-        };
-        endsAtRef.current = Date.now() + breakState.remaining * 1000;
-        persist(breakState);
-        setActive(breakState);
-        startTicking();
       }
     } else {
-      // Break done → next work cycle
-      const nextCycle = pomodoro.currentCycle + 1;
       showSystemNotification({
-        title: '💪 继续工作',
-        body: `休息结束，开始第 ${nextCycle} 轮`,
-        tag: 'pomodoro-work',
+        title: '休息结束',
+        body: `确认后开始第 ${pomodoro.currentCycle + 1} 轮工作`,
+        tag: 'pomodoro-break-done',
       });
-      beep();
-      const workState: ActiveTimerState = {
-        timer: pomodoro.workTimer,
-        remaining: pomodoro.workTimer.duration_seconds,
-        status: 'running',
-        formatted: formatRemaining(pomodoro.workTimer.duration_seconds),
-        pomodoro: { ...pomodoro, currentCycle: nextCycle, phase: 'work' },
-      };
-      endsAtRef.current = Date.now() + workState.remaining * 1000;
-      persist(workState);
-      setActive(workState);
-      startTicking();
     }
-  }, [active?.status, active?.pomodoro?.phase, active?.pomodoro?.currentCycle, active?.pomodoro?.totalCycles, startTicking]);
+    beep();
+  }, [active?.status, active?.pomodoro?.phase, active?.pomodoro?.currentCycle, active?.pomodoro?.totalCycles]);
 
   useEffect(() => {
     if (active?.status === 'running') {
@@ -318,8 +290,44 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     setActive(null);
   }, [clearInterval$]);
 
+  const advancePomodoro = useCallback(() => {
+    setActive(prev => {
+      if (!prev || prev.status !== 'done' || !prev.pomodoro) return prev;
+      const { pomodoro } = prev;
+      pomodoroTransitionKeyRef.current = null;
+      notifiedIdRef.current = null;
+      persistNotifiedId(null);
+
+      let nextState: ActiveTimerState;
+      if (pomodoro.phase === 'work') {
+        const remaining = pomodoro.breakTimer.duration_seconds;
+        nextState = {
+          timer: pomodoro.breakTimer,
+          remaining,
+          status: 'running',
+          formatted: formatRemaining(remaining),
+          pomodoro: { ...pomodoro, phase: 'break' },
+        };
+      } else {
+        const nextCycle = pomodoro.currentCycle + 1;
+        const remaining = pomodoro.workTimer.duration_seconds;
+        nextState = {
+          timer: pomodoro.workTimer,
+          remaining,
+          status: 'running',
+          formatted: formatRemaining(remaining),
+          pomodoro: { ...pomodoro, currentCycle: nextCycle, phase: 'work' },
+        };
+      }
+      endsAtRef.current = Date.now() + nextState.remaining * 1000;
+      persist(nextState);
+      startTicking();
+      return nextState;
+    });
+  }, [startTicking]);
+
   return (
-    <ActiveTimerContext.Provider value={{ active, start, startPomodoro, pause, resume, reset, clear }}>
+    <ActiveTimerContext.Provider value={{ active, start, startPomodoro, pause, resume, reset, clear, advancePomodoro }}>
       {children}
     </ActiveTimerContext.Provider>
   );

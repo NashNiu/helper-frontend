@@ -80,7 +80,7 @@ export default function TodoPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">待办事项</h1>
+      <h1 className="text-2xl font-semibold text-foreground">待办事项</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <Card>

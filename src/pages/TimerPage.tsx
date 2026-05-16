@@ -31,10 +31,10 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
   return (
     <div className="flex flex-col items-center gap-6 py-10">
       <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">{timer.name}</h2>
-      <div className={`text-7xl font-mono font-bold ${status === "done" ? "text-emerald-600" : "text-indigo-600"}`}>
+      <div className={`text-7xl font-mono font-bold ${status === "done" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
         {formatted}
       </div>
-      {status === "done" && <p className="text-emerald-600 text-sm">计时已结束</p>}
+      {status === "done" && <p className="text-emerald-600 dark:text-emerald-400 text-sm">计时已结束</p>}
       <div className="flex gap-3">
         {status !== "running" && (
           <Button onClick={handleStart} size="lg">
@@ -42,7 +42,7 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
           </Button>
         )}
         {status === "running" && (
-          <Button onClick={pause} size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-white border-transparent">
+          <Button onClick={pause} size="lg" variant="outline">
             暂停
           </Button>
         )}
@@ -55,7 +55,7 @@ function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
           重置
         </Button>
       </div>
-      <p className="text-xs text-gray-400 dark:text-gray-500">切换到其他页面时计时仍会继续，到点会有系统通知。</p>
+      <p className="text-xs text-muted-foreground">切换到其他页面时计时仍会继续，到点会有系统通知。</p>
       <Button variant="ghost" size="sm" onClick={handleBack} className="mt-4 text-muted-foreground">
         ← 返回选择
       </Button>
@@ -93,29 +93,29 @@ function PomodoroSetup({
   return (
     <div className="flex flex-col items-center gap-8 py-10">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">🍅 番茄工作法</h2>
-        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{workMin} 分钟工作 · {breakMin} 分钟休息</p>
+        <h2 className="text-xl font-semibold text-foreground">番茄工作法</h2>
+        <p className="text-sm text-muted-foreground mt-1">{workMin} 分钟工作 · {breakMin} 分钟休息</p>
       </div>
       <div className="flex flex-col items-center gap-3">
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-300">选择循环次数</p>
+        <p className="text-sm font-medium text-foreground">选择循环次数</p>
         <div className="flex items-center gap-5">
           <button
             onClick={() => setCycles((c) => Math.max(1, c - 1))}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xl font-bold text-gray-600 dark:text-gray-300 flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-xl font-bold text-foreground flex items-center justify-center transition-colors"
           >
             −
           </button>
-          <span className="text-4xl font-bold text-indigo-600 w-12 text-center">{cycles}</span>
+          <span className="text-4xl font-bold text-foreground w-12 text-center">{cycles}</span>
           <button
             onClick={() => setCycles((c) => Math.min(8, c + 1))}
-            className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xl font-bold text-gray-600 dark:text-gray-300 flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-xl font-bold text-foreground flex items-center justify-center transition-colors"
           >
             +
           </button>
         </div>
         <div className="text-center mt-1 space-y-0.5">
-          <p className="text-sm text-gray-500 dark:text-gray-400">共 {totalMin} 分钟</p>
-          <p className="text-sm font-medium text-indigo-600">预计 {endTimeStr} 结束</p>
+          <p className="text-sm text-muted-foreground">共 {totalMin} 分钟</p>
+          <p className="text-sm font-medium text-foreground">预计 {endTimeStr} 结束</p>
         </div>
       </div>
       <Button onClick={handleStart} size="lg" className="px-10">开始</Button>
@@ -126,7 +126,7 @@ function PomodoroSetup({
 
 // ── 番茄钟进行中显示 ──────────────────────────────────────────────────────────
 function PomodoroDisplay({ onBack }: { onBack: () => void }) {
-  const { active, pause, resume, reset, clear } = useActiveTimer();
+  const { active, pause, resume, reset, clear, advancePomodoro } = useActiveTimer();
   if (!active?.pomodoro) return null;
 
   const { pomodoro } = active;
@@ -137,37 +137,59 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
     active.status === "done" &&
     isWork &&
     pomodoro.currentCycle >= pomodoro.totalCycles;
-  const isTransitioning = active.status === "done" && !isAllDone;
+  const isWaitingConfirm = active.status === "done" && !isAllDone;
 
-  const phaseColor = isWork ? "text-indigo-600" : "text-emerald-600";
-  const phaseLabel = isWork ? "🍅 工作中" : "☕ 休息中";
+  const phaseColor = isWork ? "text-foreground" : "text-emerald-600 dark:text-emerald-400";
+  const phaseLabel = isWork
+    ? isWaitingConfirm ? "工作结束" : "工作中"
+    : isWaitingConfirm ? "休息结束" : "休息中";
 
   return (
     <div className="flex flex-col items-center gap-6 py-8">
       <div className="text-center">
         <div className="flex items-center justify-center gap-1.5 mb-2">
           {Array.from({ length: pomodoro.totalCycles }, (_, i) => (
-            <div key={i} className={`h-2 rounded-full transition-all ${
-              i < pomodoro.currentCycle - 1 ? "w-4 bg-indigo-400"
-              : i === pomodoro.currentCycle - 1 ? "w-6 bg-indigo-600"
-              : "w-4 bg-gray-200 dark:bg-gray-700"
+            <div key={i} className={`h-1.5 rounded-full transition-all ${
+              i < pomodoro.currentCycle - 1 ? "w-4 bg-foreground/40"
+              : i === pomodoro.currentCycle - 1 ? "w-6 bg-foreground"
+              : "w-4 bg-border"
             }`} />
           ))}
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500">第 {pomodoro.currentCycle} 轮 / 共 {pomodoro.totalCycles} 轮</p>
+        <p className="text-xs text-muted-foreground">第 {pomodoro.currentCycle} 轮 / 共 {pomodoro.totalCycles} 轮</p>
         <p className={`text-base font-semibold mt-1 ${phaseColor}`}>{phaseLabel}</p>
       </div>
-      <div className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600" : isTransitioning ? "text-gray-400 dark:text-gray-500" : phaseColor}`}>
+
+      <div className={`text-7xl font-mono font-bold ${isAllDone ? "text-emerald-600 dark:text-emerald-400" : phaseColor}`}>
         {active.formatted}
       </div>
-      {isAllDone && <p className="text-emerald-600 font-medium">🎉 全部完成，辛苦了！</p>}
-      {isTransitioning && <p className="text-gray-400 dark:text-gray-500 text-sm">正在切换阶段…</p>}
-      {!isAllDone && !isTransitioning && (
+
+      {isAllDone && (
+        <>
+          <p className="text-emerald-600 dark:text-emerald-400 font-medium">全部完成，辛苦了！</p>
+          <Button size="lg" className="px-8" onClick={() => { clear(); onBack(); }}>
+            完成
+          </Button>
+        </>
+      )}
+
+      {isWaitingConfirm && (
+        <div className="flex flex-col items-center gap-3">
+          <Button size="lg" className="px-8" onClick={advancePomodoro}>
+            {isWork
+              ? `开始休息（${Math.round(pomodoro.breakTimer.duration_seconds / 60)} 分钟）`
+              : `开始第 ${pomodoro.currentCycle + 1} 轮工作`}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { clear(); onBack(); }} className="text-muted-foreground">
+            结束番茄钟
+          </Button>
+        </div>
+      )}
+
+      {!isAllDone && !isWaitingConfirm && (
         <div className="flex gap-3">
           {isRunning && (
-            <Button onClick={pause} size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-white border-transparent">
-              暂停
-            </Button>
+            <Button onClick={pause} size="lg" variant="outline">暂停</Button>
           )}
           {isPaused && (
             <Button onClick={resume} size="lg">继续</Button>
@@ -175,16 +197,8 @@ function PomodoroDisplay({ onBack }: { onBack: () => void }) {
           <Button variant="outline" size="lg" onClick={reset}>重置本阶段</Button>
         </div>
       )}
-      {isAllDone && (
-        <Button
-          size="lg"
-          className="bg-emerald-600 hover:bg-emerald-700 text-white border-transparent px-8"
-          onClick={() => { clear(); onBack(); }}
-        >
-          完成
-        </Button>
-      )}
-      <p className="text-xs text-gray-400 dark:text-gray-500">切换到其他页面时计时继续，到点自动开始下一阶段。</p>
+
+      <p className="text-xs text-muted-foreground">切换到其他页面时计时继续，到点后等待确认。</p>
       <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
         ← 返回选择
       </Button>
@@ -253,9 +267,7 @@ export default function TimerPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-300 bg-clip-text text-transparent">
-        计时器
-      </h1>
+      <h1 className="text-2xl font-semibold text-foreground">计时器</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -266,22 +278,22 @@ export default function TimerPage() {
           return (
             <Card
               key={t.id}
-              className={`bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900 border-purple-100 dark:border-purple-900/40 hover:shadow-md transition ${isActiveTimer || isPomodoroActive ? "ring-2 ring-indigo-300" : ""}`}
+              className={`transition-colors ${isActiveTimer || isPomodoroActive ? "border-foreground/20 bg-muted/50" : "hover:bg-muted"}`}
             >
               <CardContent className="p-4">
-                <button onClick={() => setSelected(t)} className="w-full text-left">
-                  <p className="font-semibold text-gray-800 dark:text-gray-100">{t.name}</p>
+                <button onClick={() => setSelected(t)} className="w-full text-left cursor-pointer">
+                  <p className="font-medium text-foreground">{t.name}</p>
                   {isPomodoro
-                    ? <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">番茄工作法</p>
-                    : <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{Math.floor(t.duration_seconds / 60)} 分钟</p>}
+                    ? <p className="text-sm text-muted-foreground mt-1">番茄工作法</p>
+                    : <p className="text-sm text-muted-foreground mt-1">{Math.floor(t.duration_seconds / 60)} 分钟</p>}
                   {isActiveTimer && (
-                    <p className="text-xs text-indigo-600 mt-1">
+                    <p className="text-xs text-foreground/70 mt-1">
                       {active.status === "running" ? `运行中 ${active.formatted}` : active.status === "paused" ? `已暂停 ${active.formatted}` : "已完成"}
                     </p>
                   )}
                   {isPomodoroActive && (
-                    <p className="text-xs text-indigo-600 mt-1">
-                      {active!.pomodoro!.phase === "work" ? "🍅" : "☕"} 第 {active!.pomodoro!.currentCycle}/{active!.pomodoro!.totalCycles} 轮
+                    <p className="text-xs text-foreground/70 mt-1">
+                      {active!.pomodoro!.phase === "work" ? "工作中" : "休息中"} · 第 {active!.pomodoro!.currentCycle}/{active!.pomodoro!.totalCycles} 轮
                       {active!.status === "running" ? ` · ${active!.formatted}` : " · 已暂停"}
                     </p>
                   )}
@@ -291,7 +303,7 @@ export default function TimerPage() {
                     variant="ghost"
                     size="xs"
                     onClick={() => handleDelete(t.id)}
-                    className="mt-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 px-0"
+                    className="mt-2 text-destructive hover:text-destructive px-0"
                   >
                     删除
                   </Button>
@@ -302,7 +314,7 @@ export default function TimerPage() {
         })}
       </div>
 
-      <Card className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900 border-purple-100 dark:border-purple-900/40">
+      <Card className="">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium text-gray-700 dark:text-gray-200">自定义计时器</CardTitle>
         </CardHeader>

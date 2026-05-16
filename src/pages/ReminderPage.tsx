@@ -61,7 +61,7 @@ export default function ReminderPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-amber-400 dark:from-orange-400 dark:to-amber-300 bg-clip-text text-transparent">定时提醒</h1>
+      <h1 className="text-2xl font-semibold text-foreground">定时提醒</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <Card>
