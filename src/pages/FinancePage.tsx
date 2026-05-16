@@ -139,31 +139,31 @@ export default function FinancePage() {
 
         <div className="space-y-2">
           {records.map((r) => (
-            <Card key={r.id} className="overflow-hidden">
-              <CardContent className="p-0 flex items-stretch">
-                <div className={`w-1 flex-shrink-0 ${r.amount > 0 ? "bg-emerald-500" : "bg-red-400"}`} />
-                <div className="flex-1 flex items-center gap-3 px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-base font-semibold ${r.amount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                        {r.amount > 0 ? "+" : ""}¥{Math.abs(r.amount).toFixed(2)}
-                      </span>
-                      <Badge variant="outline" className="text-xs font-normal">{r.category}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {r.note || r.raw_input} · {new Date(r.happened_at).toLocaleString("zh-CN")}
-                    </p>
+            <Card
+              key={r.id}
+              className={r.amount > 0 ? "border-l-[3px] border-l-emerald-500" : "border-l-[3px] border-l-red-400"}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-base font-semibold ${r.amount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                      {r.amount > 0 ? "+" : ""}¥{Math.abs(r.amount).toFixed(2)}
+                    </span>
+                    <Badge variant="outline" className="text-xs font-normal">{r.category}</Badge>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => handleDelete(r.id)}
-                    aria-label="删除记录"
-                    className="text-destructive hover:text-destructive shrink-0"
-                  >
-                    删除
-                  </Button>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {r.note || r.raw_input} · {new Date(r.happened_at).toLocaleString("zh-CN")}
+                  </p>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => handleDelete(r.id)}
+                  aria-label="删除记录"
+                  className="text-destructive hover:text-destructive shrink-0"
+                >
+                  删除
+                </Button>
               </CardContent>
             </Card>
           ))}
