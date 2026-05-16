@@ -198,23 +198,28 @@ export default function HomePage() {
     setSubmitting(true);
     setStatus({ kind: "idle", text: "正在识别…" });
     try {
-      const { type } = await classifyApi.classify(text);
-      if (type === "reminder") {
-        const r = await reminderApi.create(text);
-        scheduleOne(r);
-        invalidate(CACHE_KEYS.reminders);
-      } else if (type === "finance") {
-        await financeApi.create(text);
-        invalidate(CACHE_KEYS.finance(financeFromDay));
-      } else if (type === "todo") {
-        await todoApi.create(text, []);
-        invalidate(CACHE_KEYS.todos);
-      } else if (type === "timer") {
-        await timerApi.createFromText(text);
-        invalidate(CACHE_KEYS.timers);
-      }
+      const { types } = await classifyApi.classify(text);
+      await Promise.all(
+        types.map(async (type) => {
+          if (type === "reminder") {
+            const r = await reminderApi.create(text);
+            scheduleOne(r);
+            invalidate(CACHE_KEYS.reminders);
+          } else if (type === "finance") {
+            await financeApi.create(text);
+            invalidate(CACHE_KEYS.finance(financeFromDay));
+          } else if (type === "todo") {
+            await todoApi.create(text, []);
+            invalidate(CACHE_KEYS.todos);
+          } else if (type === "timer") {
+            await timerApi.createFromText(text);
+            invalidate(CACHE_KEYS.timers);
+          }
+        }),
+      );
       setInput("");
-      setStatus({ kind: "ok", text: `已添加到「${TYPE_META[type].label}」` });
+      const labels = types.map((t) => `「${TYPE_META[t].label}」`).join("");
+      setStatus({ kind: "ok", text: `已添加到${labels}` });
     } catch (err) {
       setStatus({
         kind: "err",
