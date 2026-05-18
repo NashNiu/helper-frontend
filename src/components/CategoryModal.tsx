@@ -22,19 +22,17 @@ export default function CategoryModal({ open, onClose }: Props) {
   const [newPrimaryName, setNewPrimaryName] = useState('');
   const [newSubInputs, setNewSubInputs] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
-
-  const loadTree = useCallback(async () => {
-    try {
-      const data = await categoryApi.getAll();
-      setTree(data);
-    } catch {
-      setError('加载分类失败');
-    }
-  }, []);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const refresh = useCallback(() => setRefreshCount((c) => c + 1), []);
 
   useEffect(() => {
-    if (open) loadTree();
-  }, [open, loadTree]);
+    if (!open) return;
+    let active = true;
+    categoryApi.getAll()
+      .then((data) => { if (active) setTree(data); })
+      .catch(() => { if (active) setError('加载分类失败'); });
+    return () => { active = false; };
+  }, [open, refreshCount]);
 
   const handleAddPrimary = async () => {
     if (!newPrimaryName.trim()) return;
@@ -42,7 +40,7 @@ export default function CategoryModal({ open, onClose }: Props) {
     try {
       await categoryApi.create(newPrimaryName.trim());
       setNewPrimaryName('');
-      await loadTree();
+      refresh();
     } catch {
       setError('新增主分类失败');
     }
@@ -55,7 +53,7 @@ export default function CategoryModal({ open, onClose }: Props) {
     try {
       await categoryApi.create(name, parentId);
       setNewSubInputs((prev) => ({ ...prev, [parentId]: '' }));
-      await loadTree();
+      refresh();
     } catch {
       setError('新增子分类失败');
     }
@@ -65,7 +63,7 @@ export default function CategoryModal({ open, onClose }: Props) {
     setError('');
     try {
       await categoryApi.remove(id);
-      await loadTree();
+      refresh();
     } catch (err) {
       setError(getErrorMessage(err, '删除失败'));
     }
