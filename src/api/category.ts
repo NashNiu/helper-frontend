@@ -7,7 +7,7 @@ export interface Category {
   parent_id: number | null;
 }
 
-export interface CategoryTree extends Category {
+export interface CategoryTree extends Omit<Category, 'parent_id'> {
   parent_id: null;
   children: Array<Omit<CategoryTree, 'children'> & { parent_id: number }>;
 }
