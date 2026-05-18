@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { categoryApi } from '../api/category';
+import { getErrorMessage } from '../api/http';
 import type { CategoryTree } from '../api/category';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,21 +23,22 @@ export default function CategoryModal({ open, onClose }: Props) {
   const [newSubInputs, setNewSubInputs] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (open) loadTree();
-  }, [open]);
-
-  const loadTree = async () => {
+  const loadTree = useCallback(async () => {
     try {
       const data = await categoryApi.getAll();
       setTree(data);
     } catch {
       setError('加载分类失败');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (open) loadTree();
+  }, [open, loadTree]);
 
   const handleAddPrimary = async () => {
     if (!newPrimaryName.trim()) return;
+    setError('');
     try {
       await categoryApi.create(newPrimaryName.trim());
       setNewPrimaryName('');
@@ -49,6 +51,7 @@ export default function CategoryModal({ open, onClose }: Props) {
   const handleAddSub = async (parentId: number) => {
     const name = (newSubInputs[parentId] ?? '').trim();
     if (!name) return;
+    setError('');
     try {
       await categoryApi.create(name, parentId);
       setNewSubInputs((prev) => ({ ...prev, [parentId]: '' }));
@@ -59,12 +62,12 @@ export default function CategoryModal({ open, onClose }: Props) {
   };
 
   const handleDeleteCategory = async (id: number) => {
+    setError('');
     try {
       await categoryApi.remove(id);
       await loadTree();
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e?.response?.data?.message ?? '删除失败');
+    } catch (err) {
+      setError(getErrorMessage(err, '删除失败'));
     }
   };
 

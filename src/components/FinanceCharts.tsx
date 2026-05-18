@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -41,6 +41,10 @@ function getSubName(r: FinanceRecord): string {
 
 export default function FinanceCharts({ records }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDrillCategory(null);
+  }, [records]);
 
   if (records.length === 0)
     return (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConfirm } from '../hooks/useConfirm';
 import { financeApi } from '../api/finance';
 import type { FinanceRecord } from '../api/finance';
@@ -52,6 +52,7 @@ export default function FinancePage() {
   const [error, setError] = useState('');
   const [newCatToast, setNewCatToast] = useState<string | null>(null);
   const { confirm, dialog } = useConfirm();
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadRecords = useCallback(async (r: Range) => {
     setError('');
@@ -78,6 +79,12 @@ export default function FinancePage() {
     return () => { cancelled = true; };
   }, [range]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
   const handleCreate = async () => {
     if (!input.trim()) return;
     setError('');
@@ -85,9 +92,9 @@ export default function FinancePage() {
     try {
       const result = await financeApi.create(input);
       if (result.new_categories.length > 0) {
-        const names = result.new_categories.map((c) => `「${c.name}」`).join('、');
-        setNewCatToast(`AI 识别到新分类，已自动创建: ${names}`);
-        setTimeout(() => setNewCatToast(null), 4000);
+        const names = result.new_categories.map((c) => `「${c.name}」`).join('');
+        setNewCatToast(`AI 识别到新分类${names}，已自动创建`);
+        toastTimerRef.current = setTimeout(() => setNewCatToast(null), 4000);
       }
       await loadRecords(range);
       setInput('');
