@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -10,29 +11,42 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-} from "recharts";
-import type { FinanceRecord } from "../api/finance";
+} from 'recharts';
+import type { FinanceRecord } from '../api/finance';
 
 const PIE_COLORS = [
-  "#6366f1",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#3b82f6",
-  "#8b5cf6",
+  '#6366f1',
+  '#f59e0b',
+  '#10b981',
+  '#ef4444',
+  '#3b82f6',
+  '#8b5cf6',
+  '#06b6d4',
+  '#84cc16',
+  '#f97316',
 ];
 
 interface Props {
   records: FinanceRecord[];
 }
 
-export default function FinanceCharts({ records }: Props) {
-  if (records.length === 0)
-    return <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>;
+function getPrimaryName(r: FinanceRecord): string {
+  return r.category_rel?.parent?.name ?? r.category_rel?.name ?? r.category;
+}
 
-  // 按日期聚合收支。
-  // 关键点：key 用 ISO YYYY-MM-DD（字符串可直接 lexicographic 排序），
-  // 显示时再 format 成 MM/DD —— 这样跨年也是按时间正确顺序。
+function getSubName(r: FinanceRecord): string {
+  if (!r.category_rel) return '未分类';
+  return r.category_rel.parent ? r.category_rel.name : '(主分类直接)';
+}
+
+export default function FinanceCharts({ records }: Props) {
+  const [drillCategory, setDrillCategory] = useState<string | null>(null);
+
+  if (records.length === 0)
+    return (
+      <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
+    );
+
   const byDay = records.reduce<
     Record<string, { income: number; expense: number }>
   >((acc, r) => {
@@ -51,24 +65,31 @@ export default function FinanceCharts({ records }: Props) {
       ...v,
     }));
 
-  // 按分类聚合支出
-  const byCategory = records
-    .filter((r) => r.amount < 0)
-    .reduce<Record<string, number>>((acc, r) => {
-      acc[r.category] = (acc[r.category] ?? 0) + Math.abs(r.amount);
-      return acc;
-    }, {});
+  const expenses = records.filter((r) => r.amount < 0);
 
-  const pieData = Object.entries(byCategory).map(([name, value]) => ({
+  const pieAggregation = drillCategory
+    ? expenses
+        .filter((r) => getPrimaryName(r) === drillCategory)
+        .reduce<Record<string, number>>((acc, r) => {
+          const key = getSubName(r);
+          acc[key] = (acc[key] ?? 0) + Math.abs(r.amount);
+          return acc;
+        }, {})
+    : expenses.reduce<Record<string, number>>((acc, r) => {
+        const key = getPrimaryName(r);
+        acc[key] = (acc[key] ?? 0) + Math.abs(r.amount);
+        return acc;
+      }, {});
+
+  const pieData = Object.entries(pieAggregation).map(([name, value]) => ({
     name,
     value,
   }));
+
   const totalIncome = records
     .filter((r) => r.amount > 0)
     .reduce((s, r) => s + r.amount, 0);
-  const totalExpense = records
-    .filter((r) => r.amount < 0)
-    .reduce((s, r) => s + Math.abs(r.amount), 0);
+  const totalExpense = expenses.reduce((s, r) => s + Math.abs(r.amount), 0);
 
   return (
     <div className="space-y-6">
@@ -114,8 +135,22 @@ export default function FinanceCharts({ records }: Props) {
 
       {pieData.length > 0 && (
         <div className="bg-white rounded-xl p-4 shadow-sm border">
-          <h3 className="text-sm font-medium text-gray-600 mb-3">支出分类</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+            <button
+              className={drillCategory ? 'underline text-indigo-600' : 'font-medium'}
+              onClick={() => setDrillCategory(null)}
+            >
+              支出分布
+            </button>
+            {drillCategory && (
+              <>
+                <span className="text-gray-400">›</span>
+                <span className="font-medium">{drillCategory}</span>
+              </>
+            )}
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
                 data={pieData}
@@ -123,7 +158,15 @@ export default function FinanceCharts({ records }: Props) {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
+                outerRadius={85}
+                onClick={
+                  drillCategory
+                    ? undefined
+                    : (entry: { name?: string }) => {
+                        if (entry.name) setDrillCategory(entry.name);
+                      }
+                }
+                style={{ cursor: drillCategory ? 'default' : 'pointer' }}
                 label={(entry: { name?: string; percent?: number }) =>
                   `${entry.name ?? ''} ${((entry.percent ?? 0) * 100).toFixed(0)}%`
                 }
@@ -139,6 +182,12 @@ export default function FinanceCharts({ records }: Props) {
               />
             </PieChart>
           </ResponsiveContainer>
+
+          {!drillCategory && (
+            <p className="text-xs text-gray-400 text-center mt-1">
+              点击扇形查看子分类明细
+            </p>
+          )}
         </div>
       )}
     </div>
