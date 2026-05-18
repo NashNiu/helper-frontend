@@ -9,7 +9,7 @@ export interface Category {
 
 export interface CategoryTree extends Omit<Category, 'parent_id'> {
   parent_id: null;
-  children: Array<Omit<CategoryTree, 'children'> & { parent_id: number }>;
+  children: Array<Omit<Category, 'parent_id'> & { parent_id: number }>;
 }
 
 export const categoryApi = {
