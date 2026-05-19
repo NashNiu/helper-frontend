@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,21 +9,20 @@ import {
   Legend,
   PieChart,
   Pie,
-  Cell,
   ResponsiveContainer,
-} from 'recharts';
-import type { FinanceRecord } from '../api/finance';
+} from "recharts";
+import type { FinanceRecord } from "../api/finance";
 
 const PIE_COLORS = [
-  '#6366f1',
-  '#f59e0b',
-  '#10b981',
-  '#ef4444',
-  '#3b82f6',
-  '#8b5cf6',
-  '#06b6d4',
-  '#84cc16',
-  '#f97316',
+  "#6366f1",
+  "#f59e0b",
+  "#10b981",
+  "#ef4444",
+  "#3b82f6",
+  "#8b5cf6",
+  "#06b6d4",
+  "#84cc16",
+  "#f97316",
 ];
 
 interface Props {
@@ -35,27 +34,21 @@ function getPrimaryName(r: FinanceRecord): string {
 }
 
 function getSubName(r: FinanceRecord): string {
-  if (!r.category_rel) return '未分类';
-  return r.category_rel.parent ? r.category_rel.name : '(主分类直接)';
+  if (!r.category_rel) return "未分类";
+  return r.category_rel.parent ? r.category_rel.name : "(主分类直接)";
 }
 
 export default function FinanceCharts({ records }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
 
-  useEffect(() => {
-    setDrillCategory(null);
-  }, [records]);
-
   if (records.length === 0)
-    return (
-      <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>
-    );
+    return <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>;
 
   const byDay = records.reduce<
     Record<string, { income: number; expense: number }>
   >((acc, r) => {
     const d = new Date(r.happened_at);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     if (!acc[key]) acc[key] = { income: 0, expense: 0 };
     if (r.amount > 0) acc[key].income += r.amount;
     else acc[key].expense += Math.abs(r.amount);
@@ -71,23 +64,29 @@ export default function FinanceCharts({ records }: Props) {
 
   const expenses = records.filter((r) => r.amount < 0);
 
-  const pieAggregation = drillCategory
+  const topLevelAgg = expenses.reduce<Record<string, number>>((acc, r) => {
+    const key = getPrimaryName(r);
+    acc[key] = (acc[key] ?? 0) + Math.abs(r.amount);
+    return acc;
+  }, {});
+
+  // activeDrill is only valid if the category still exists in current data
+  const activeDrill = drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
+
+  const pieAggregation = activeDrill
     ? expenses
-        .filter((r) => getPrimaryName(r) === drillCategory)
+        .filter((r) => getPrimaryName(r) === activeDrill)
         .reduce<Record<string, number>>((acc, r) => {
           const key = getSubName(r);
           acc[key] = (acc[key] ?? 0) + Math.abs(r.amount);
           return acc;
         }, {})
-    : expenses.reduce<Record<string, number>>((acc, r) => {
-        const key = getPrimaryName(r);
-        acc[key] = (acc[key] ?? 0) + Math.abs(r.amount);
-        return acc;
-      }, {});
+    : topLevelAgg;
 
-  const pieData = Object.entries(pieAggregation).map(([name, value]) => ({
+  const pieData = Object.entries(pieAggregation).map(([name, value], i) => ({
     name,
     value,
+    fill: PIE_COLORS[i % PIE_COLORS.length],
   }));
 
   const totalIncome = records
@@ -138,18 +137,20 @@ export default function FinanceCharts({ records }: Props) {
       </div>
 
       {pieData.length > 0 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border">
+        <div className="bg-white rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
           <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
             <button
-              className={drillCategory ? 'underline text-indigo-600' : 'font-medium'}
+              className={
+                activeDrill ? "underline text-indigo-600" : "font-medium"
+              }
               onClick={() => setDrillCategory(null)}
             >
               支出分布
             </button>
-            {drillCategory && (
+            {activeDrill && (
               <>
                 <span className="text-gray-400">›</span>
-                <span className="font-medium">{drillCategory}</span>
+                <span className="font-medium">{activeDrill}</span>
               </>
             )}
           </div>
@@ -163,31 +164,28 @@ export default function FinanceCharts({ records }: Props) {
                 cx="50%"
                 cy="50%"
                 outerRadius={85}
+                stroke="none"
                 onClick={
-                  drillCategory
+                  activeDrill
                     ? undefined
                     : (entry: { name?: string }) => {
                         if (entry.name) setDrillCategory(entry.name);
                       }
                 }
-                style={{ cursor: drillCategory ? 'default' : 'pointer' }}
+                style={{ cursor: activeDrill ? "default" : "pointer" }}
                 label={(entry: { name?: string; percent?: number }) =>
-                  `${entry.name ?? ''} ${((entry.percent ?? 0) * 100).toFixed(0)}%`
+                  `${entry.name ?? ""} ${((entry.percent ?? 0) * 100).toFixed(0)}%`
                 }
-              >
-                {pieData.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
+              />
+              {/* <Tooltip
                 formatter={(value: unknown) =>
                   `¥${(value as number).toFixed(2)}`
                 }
-              />
+              /> */}
             </PieChart>
           </ResponsiveContainer>
 
-          {!drillCategory && (
+          {!activeDrill && (
             <p className="text-xs text-gray-400 text-center mt-1">
               点击扇形查看子分类明细
             </p>
