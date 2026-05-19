@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
-type Range = "today" | "week" | "month";
+type Range = "today" | "week" | "month" | "year" | "custom";
 
-function getRangeDates(range: Range): { from: string; to: string } {
+function getRangeDates(range: Exclude<Range, "custom">): {
+  from: string;
+  to: string;
+} {
   const now = new Date();
   const to = now.toISOString();
   if (range === "today") {
@@ -29,8 +33,17 @@ function getRangeDates(range: Range): { from: string; to: string } {
     ).toISOString();
     return { from, to };
   }
+  if (range === "year") {
+    const from = new Date(now.getFullYear(), 0, 1).toISOString();
+    return { from, to };
+  }
   const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   return { from, to };
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -47,6 +60,8 @@ export default function FinancePage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [range, setRange] = useState<Range>("week");
+  const [customFrom, setCustomFrom] = useState(todayStr);
+  const [customTo, setCustomTo] = useState(todayStr);
   const [showChart, setShowChart] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [error, setError] = useState("");
@@ -54,10 +69,9 @@ export default function FinancePage() {
   const { confirm, dialog } = useConfirm();
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadRecords = useCallback(async (r: Range) => {
+  const doLoad = useCallback(async (from: string, to: string) => {
     setError("");
     try {
-      const { from, to } = getRangeDates(r);
       const data = await financeApi.getAll(from, to);
       setRecords(data);
     } catch (err) {
@@ -65,17 +79,33 @@ export default function FinancePage() {
     }
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { from, to } = getRangeDates(range);
-        const data = await financeApi.getAll(from, to);
-        if (!cancelled) setRecords(data);
-      } catch (err) {
-        if (!cancelled) setError(getErrorMessage(err, "加载记录失败，请重试"));
+  const loadCurrentRange = useCallback(
+    (r: Range, dateFrom: string, dateTo: string) => {
+      if (r === "custom") {
+        if (!dateFrom || !dateTo) return Promise.resolve();
+        return doLoad(
+          new Date(dateFrom).toISOString(),
+          new Date(dateTo + "T23:59:59").toISOString(),
+        );
       }
-    })();
+      const { from, to } = getRangeDates(r);
+      return doLoad(from, to);
+    },
+    [doLoad],
+  );
+
+  useEffect(() => {
+    if (range === "custom") return;
+    let cancelled = false;
+    const { from, to } = getRangeDates(range);
+    financeApi
+      .getAll(from, to)
+      .then((data) => {
+        if (!cancelled) setRecords(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(getErrorMessage(err, "加载记录失败，请重试"));
+      });
     return () => {
       cancelled = true;
     };
@@ -100,7 +130,7 @@ export default function FinancePage() {
         setNewCatToast(`AI 识别到新分类${names}，已自动创建`);
         toastTimerRef.current = setTimeout(() => setNewCatToast(null), 4000);
       }
-      await loadRecords(range);
+      await loadCurrentRange(range, customFrom, customTo);
       setInput("");
     } catch (err) {
       setError(getErrorMessage(err, "记录创建失败，请重试"));
@@ -118,6 +148,13 @@ export default function FinancePage() {
     } catch (err) {
       setError(getErrorMessage(err, "删除失败，请重试"));
     }
+  };
+
+  const RANGE_LABELS: Record<Exclude<Range, "custom">, string> = {
+    today: "今天",
+    week: "本周",
+    month: "本月",
+    year: "本年",
   };
 
   return (
@@ -150,35 +187,56 @@ export default function FinancePage() {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            {(["today", "week", "month"] as Range[]).map((r) => (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2 flex-wrap">
+              {(
+                ["today", "week", "month", "year"] as Exclude<Range, "custom">[]
+              ).map((r) => (
+                <Button
+                  key={r}
+                  variant={range === r ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setRange(r)}
+                >
+                  {RANGE_LABELS[r]}
+                </Button>
+              ))}
               <Button
-                key={r}
-                variant={range === r ? "default" : "outline"}
+                variant={range === "custom" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setRange(r)}
+                onClick={() => setRange("custom")}
               >
-                {r === "today" ? "今天" : r === "week" ? "本周" : "本月"}
+                自定义
               </Button>
-            ))}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCategoryModal(true)}
+              >
+                管理分类
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowChart((v) => !v)}
+              >
+                {showChart ? "隐藏图表" : "查看图表"}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCategoryModal(true)}
-            >
-              管理分类
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowChart((v) => !v)}
-            >
-              {showChart ? "隐藏图表" : "查看图表"}
-            </Button>
-          </div>
+
+          {range === "custom" && (
+            <DateRangePicker
+              from={customFrom}
+              to={customTo}
+              onFromChange={setCustomFrom}
+              onToChange={setCustomTo}
+              onQuery={() => loadCurrentRange("custom", customFrom, customTo)}
+            />
+          )}
         </div>
 
         {showChart && <FinanceCharts records={records} />}
@@ -196,8 +254,8 @@ export default function FinancePage() {
                     : "border-l-[3px] border-l-red-400"
                 }
               >
-                <CardContent className="p-4 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
+                <CardContent className="p-4 flex items-center gap-3 py-1">
+                  <div className="flex-1 min-w-0 gap-1 flex flex-col">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={`text-base font-semibold ${
@@ -206,38 +264,35 @@ export default function FinancePage() {
                             : "text-red-500 dark:text-red-400"
                         }`}
                       >
-                        {r.amount > 0 ? "+" : ""}¥
-                        {Math.abs(r.amount).toFixed(2)}
+                        {r.amount > 0 ? "+" : ""}¥{Math.abs(r.amount).toFixed(2)}
                       </span>
-                      <Badge
-                        variant="secondary"
-                        className="text-xs font-normal"
-                      >
+                      <Badge variant="secondary" className="text-xs font-normal">
                         {primary}
                       </Badge>
                       {sub && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs font-normal"
-                        >
+                        <Badge variant="outline" className="text-xs font-normal">
                           {sub}
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                      {r.note || r.raw_input} ·{" "}
-                      {new Date(r.happened_at).toLocaleString("zh-CN")}
+                      {r.note || r.raw_input}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => handleDelete(r.id)}
-                    aria-label="删除记录"
-                    className="text-destructive hover:text-destructive shrink-0"
-                  >
-                    删除
-                  </Button>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(r.happened_at).toLocaleString("zh-CN")}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => handleDelete(r.id)}
+                      aria-label="删除记录"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      删除
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );

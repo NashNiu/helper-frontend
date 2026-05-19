@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -71,7 +71,8 @@ export default function FinanceCharts({ records }: Props) {
   }, {});
 
   // activeDrill is only valid if the category still exists in current data
-  const activeDrill = drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
+  const activeDrill =
+    drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
 
   const pieAggregation = activeDrill
     ? expenses
@@ -111,7 +112,7 @@ export default function FinanceCharts({ records }: Props) {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
+      <div className="bg-white rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
         <h3 className="text-sm font-medium text-gray-600 mb-3">每日收支</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={barData}>
@@ -195,3 +196,4 @@ export default function FinanceCharts({ records }: Props) {
     </div>
   );
 }
+
