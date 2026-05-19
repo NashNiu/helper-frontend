@@ -28,6 +28,7 @@ const PIE_COLORS = [
 interface Props {
   records: FinanceRecord[];
   onDayClick?: (isoDay: string) => void;
+  onCategorySelect?: (category: string | null) => void;
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -39,7 +40,7 @@ function getSubName(r: FinanceRecord): string {
   return r.category_rel.parent ? r.category_rel.name : "(主分类直接)";
 }
 
-export default function FinanceCharts({ records, onDayClick }: Props) {
+export default function FinanceCharts({ records, onDayClick, onCategorySelect }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
 
   if (records.length === 0)
@@ -150,7 +151,7 @@ export default function FinanceCharts({ records, onDayClick }: Props) {
               className={
                 activeDrill ? "underline text-indigo-600" : "font-medium"
               }
-              onClick={() => setDrillCategory(null)}
+              onClick={() => { setDrillCategory(null); onCategorySelect?.(null); }}
             >
               支出分布
             </button>
@@ -176,7 +177,10 @@ export default function FinanceCharts({ records, onDayClick }: Props) {
                   activeDrill
                     ? undefined
                     : (entry: { name?: string }) => {
-                        if (entry.name) setDrillCategory(entry.name);
+                        if (entry.name) {
+                          setDrillCategory(entry.name);
+                          onCategorySelect?.(entry.name);
+                        }
                       }
                 }
                 style={{ cursor: activeDrill ? "default" : "pointer" }}

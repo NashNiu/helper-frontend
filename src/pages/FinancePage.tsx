@@ -64,6 +64,7 @@ export default function FinancePage() {
   const [customTo, setCustomTo] = useState(todayStr);
   const [showChart, setShowChart] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [newCatToast, setNewCatToast] = useState<string | null>(null);
   const { confirm, dialog } = useConfirm();
@@ -242,6 +243,7 @@ export default function FinancePage() {
         {showChart && (
           <FinanceCharts
             records={records}
+            onCategorySelect={setFilterCategory}
             onDayClick={(isoDay) => {
               setRange("custom");
               setCustomFrom(isoDay);
@@ -255,7 +257,18 @@ export default function FinancePage() {
         )}
 
         <div className="space-y-2">
-          {records.map((r) => {
+          {filterCategory && (
+            <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
+              <span>筛选：{filterCategory}</span>
+              <button
+                className="ml-auto text-indigo-400 hover:text-indigo-600"
+                onClick={() => setFilterCategory(null)}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          {(filterCategory ? records.filter((r) => getPrimaryName(r) === filterCategory) : records).map((r) => {
             const primary = getPrimaryName(r);
             const sub = getSubName(r);
             return (
@@ -310,7 +323,7 @@ export default function FinancePage() {
               </Card>
             );
           })}
-          {records.length === 0 && (
+          {(filterCategory ? records.filter((r) => getPrimaryName(r) === filterCategory) : records).length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
               暂无记录
             </p>
