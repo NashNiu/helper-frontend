@@ -17,14 +17,14 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         month: "flex flex-col gap-4",
         month_caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1 absolute inset-x-0 justify-between px-1",
+        nav: "flex items-center gap-1 absolute inset-x-0 justify-between px-1 z-10",
         button_previous: cn(
-          "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors",
+          "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors cursor-pointer",
           "hover:bg-accent hover:text-accent-foreground",
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         button_next: cn(
-          "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors",
+          "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors cursor-pointer",
           "hover:bg-accent hover:text-accent-foreground",
           "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
