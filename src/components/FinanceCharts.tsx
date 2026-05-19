@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -42,9 +42,29 @@ function getSubName(r: FinanceRecord): string {
 
 export default function FinanceCharts({ records, onDayClick, onCategorySelect }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(
+    () => document.documentElement.classList.contains("dark"),
+  );
+
+  useEffect(() => {
+    const el = document.documentElement;
+    const obs = new MutationObserver(() =>
+      setIsDark(el.classList.contains("dark")),
+    );
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
+  const tickColor = isDark ? "#9ca3af" : "#6b7280";
+  const gridColor = isDark ? "#374151" : "#e5e7eb";
+  const tooltipStyle = {
+    backgroundColor: isDark ? "#1f2937" : "#ffffff",
+    borderColor: isDark ? "#374151" : "#e5e7eb",
+    color: isDark ? "#f9fafb" : "#111827",
+  };
 
   if (records.length === 0)
-    return <p className="text-sm text-gray-400 text-center py-8">暂无数据</p>;
+    return <p className="text-sm text-muted-foreground text-center py-8">暂无数据</p>;
 
   const byDay = records.reduce<
     Record<string, { income: number; expense: number }>
@@ -73,7 +93,6 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
     return acc;
   }, {});
 
-  // activeDrill is only valid if the category still exists in current data
   const activeDrill =
     drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
 
@@ -101,29 +120,29 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <p className="text-xs text-gray-500">总收入</p>
-          <p className="text-2xl font-bold text-green-600">
+        <div className="bg-green-50 dark:bg-green-950/40 rounded-xl p-4 text-center">
+          <p className="text-xs text-muted-foreground">总收入</p>
+          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
             ¥{totalIncome.toFixed(2)}
           </p>
         </div>
-        <div className="bg-red-50 rounded-xl p-4 text-center">
-          <p className="text-xs text-gray-500">总支出</p>
-          <p className="text-2xl font-bold text-red-500">
+        <div className="bg-red-50 dark:bg-red-950/40 rounded-xl p-4 text-center">
+          <p className="text-xs text-muted-foreground">总支出</p>
+          <p className="text-2xl font-bold text-red-500 dark:text-red-400">
             ¥{totalExpense.toFixed(2)}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
-        <h3 className="text-sm font-medium text-gray-600 mb-3">每日收支</h3>
+      <div className="bg-card rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
+        <h3 className="text-sm font-medium text-card-foreground mb-3">每日收支</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={barData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Legend />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+            <XAxis dataKey="day" tick={{ fontSize: 12, fill: tickColor }} />
+            <YAxis tick={{ fontSize: 12, fill: tickColor }} />
+            <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: tooltipStyle.color }} />
+            <Legend formatter={(value) => <span style={{ color: tickColor }}>{value}</span>} />
             <Bar
               dataKey="income"
               name="收入"
@@ -145,11 +164,11 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
       </div>
 
       {pieData.length > 0 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
-          <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+        <div className="bg-card rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
+          <div className="flex items-center gap-1 text-sm text-card-foreground mb-3">
             <button
               className={
-                activeDrill ? "underline text-indigo-600" : "font-medium"
+                activeDrill ? "underline text-indigo-500 dark:text-indigo-400" : "font-medium"
               }
               onClick={() => { setDrillCategory(null); onCategorySelect?.(null); }}
             >
@@ -157,7 +176,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
             </button>
             {activeDrill && (
               <>
-                <span className="text-gray-400">›</span>
+                <span className="text-muted-foreground">›</span>
                 <span className="font-medium">{activeDrill}</span>
               </>
             )}
@@ -184,20 +203,30 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
                       }
                 }
                 style={{ cursor: activeDrill ? "default" : "pointer" }}
-                label={(entry: { name?: string; percent?: number }) =>
-                  `${entry.name ?? ""} ${((entry.percent ?? 0) * 100).toFixed(0)}%`
-                }
+                label={(props: {
+                  name?: string;
+                  percent?: number;
+                  x?: number;
+                  y?: number;
+                  textAnchor?: "end" | "inherit" | "middle" | "start";
+                }) => (
+                  <text
+                    x={props.x}
+                    y={props.y}
+                    fill={tickColor}
+                    textAnchor={props.textAnchor ?? "middle"}
+                    dominantBaseline="central"
+                    fontSize={12}
+                  >
+                    {`${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
+                  </text>
+                )}
               />
-              {/* <Tooltip
-                formatter={(value: unknown) =>
-                  `¥${(value as number).toFixed(2)}`
-                }
-              /> */}
             </PieChart>
           </ResponsiveContainer>
 
           {!activeDrill && (
-            <p className="text-xs text-gray-400 text-center mt-1">
+            <p className="text-xs text-muted-foreground text-center mt-1">
               点击扇形查看子分类明细
             </p>
           )}
@@ -206,4 +235,3 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
     </div>
   );
 }
-
