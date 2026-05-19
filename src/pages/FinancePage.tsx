@@ -13,10 +13,10 @@ import { DateRangePicker } from "@/components/DateRangePicker";
 
 type Range = "today" | "week" | "month" | "year" | "custom";
 
-function getRangeDates(range: Exclude<Range, "custom">): {
-  from: string;
-  to: string;
-} {
+function getRangeDates(
+  range: Exclude<Range, "custom">,
+  offset = 0,
+): { from: string; to: string } {
   const now = new Date();
   const to = now.toISOString();
   if (range === "today") {
@@ -28,17 +28,51 @@ function getRangeDates(range: Exclude<Range, "custom">): {
     return { from, to };
   }
   if (range === "week") {
-    const from = new Date(
-      now.getTime() - 7 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    return { from, to };
+    const dow = now.getDay();
+    const daysToMon = dow === 0 ? 6 : dow - 1;
+    const monday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - daysToMon + offset * 7,
+    );
+    const sunday = new Date(
+      monday.getFullYear(),
+      monday.getMonth(),
+      monday.getDate() + 6,
+      23, 59, 59,
+    );
+    return { from: monday.toISOString(), to: offset >= 0 ? to : sunday.toISOString() };
   }
   if (range === "year") {
-    const from = new Date(now.getFullYear(), 0, 1).toISOString();
-    return { from, to };
+    const firstDay = new Date(now.getFullYear() + offset, 0, 1);
+    const lastDay = new Date(now.getFullYear() + offset + 1, 0, 0, 23, 59, 59);
+    return { from: firstDay.toISOString(), to: offset >= 0 ? to : lastDay.toISOString() };
   }
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  return { from, to };
+  // month
+  const firstDay = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59);
+  return { from: firstDay.toISOString(), to: offset >= 0 ? to : lastDay.toISOString() };
+}
+
+function getPeriodLabel(range: "week" | "month" | "year", offset: number): string {
+  const now = new Date();
+  if (range === "week") {
+    const dow = now.getDay();
+    const daysToMon = dow === 0 ? 6 : dow - 1;
+    const monday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - daysToMon + offset * 7,
+    );
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${fmt(monday)} ~ ${fmt(sunday)}`;
+  }
+  if (range === "year") {
+    return `${now.getFullYear() + offset}年`;
+  }
+  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return `${d.getFullYear()}年${d.getMonth() + 1}月`;
 }
 
 function todayStr() {
@@ -60,6 +94,9 @@ export default function FinancePage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [range, setRange] = useState<Range>("week");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [yearOffset, setYearOffset] = useState(0);
   const [customFrom, setCustomFrom] = useState(todayStr);
   const [customTo, setCustomTo] = useState(todayStr);
   const [showChart, setShowChart] = useState(false);
@@ -81,7 +118,7 @@ export default function FinancePage() {
   }, []);
 
   const loadCurrentRange = useCallback(
-    (r: Range, dateFrom: string, dateTo: string) => {
+    (r: Range, dateFrom: string, dateTo: string, weekOff = 0, monthOff = 0, yearOff = 0) => {
       if (r === "custom") {
         if (!dateFrom || !dateTo) return Promise.resolve();
         return doLoad(
@@ -89,7 +126,8 @@ export default function FinancePage() {
           new Date(dateTo + "T23:59:59").toISOString(),
         );
       }
-      const { from, to } = getRangeDates(r);
+      const offset = r === "week" ? weekOff : r === "month" ? monthOff : r === "year" ? yearOff : 0;
+      const { from, to } = getRangeDates(r, offset);
       return doLoad(from, to);
     },
     [doLoad],
@@ -97,8 +135,9 @@ export default function FinancePage() {
 
   useEffect(() => {
     if (range === "custom") return;
+    const offset = range === "week" ? weekOffset : range === "month" ? monthOffset : range === "year" ? yearOffset : 0;
     let cancelled = false;
-    const { from, to } = getRangeDates(range);
+    const { from, to } = getRangeDates(range, offset);
     financeApi
       .getAll(from, to)
       .then((data) => {
@@ -110,7 +149,7 @@ export default function FinancePage() {
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [range, weekOffset, monthOffset, yearOffset]);
 
   useEffect(() => {
     return () => {
@@ -131,7 +170,7 @@ export default function FinancePage() {
         setNewCatToast(`AI 识别到新分类${names}，已自动创建`);
         toastTimerRef.current = setTimeout(() => setNewCatToast(null), 4000);
       }
-      await loadCurrentRange(range, customFrom, customTo);
+      await loadCurrentRange(range, customFrom, customTo, weekOffset, monthOffset, yearOffset);
       setInput("");
     } catch (err) {
       setError(getErrorMessage(err, "记录创建失败，请重试"));
@@ -198,7 +237,7 @@ export default function FinancePage() {
                   key={r}
                   variant={range === r ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setRange(r)}
+                  onClick={() => { setRange(r); setWeekOffset(0); setMonthOffset(0); setYearOffset(0); }}
                 >
                   {RANGE_LABELS[r]}
                 </Button>
@@ -228,6 +267,42 @@ export default function FinancePage() {
               </Button>
             </div>
           </div>
+
+          {(range === "week" || range === "month" || range === "year") && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2"
+                onClick={() => {
+                  if (range === "week") setWeekOffset((o) => o - 1);
+                  else if (range === "month") setMonthOffset((o) => o - 1);
+                  else setYearOffset((o) => o - 1);
+                }}
+              >
+                ←
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[90px] text-center select-none">
+                {getPeriodLabel(
+                  range,
+                  range === "week" ? weekOffset : range === "month" ? monthOffset : yearOffset,
+                )}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2"
+                disabled={(range === "week" ? weekOffset : range === "month" ? monthOffset : yearOffset) >= 0}
+                onClick={() => {
+                  if (range === "week") setWeekOffset((o) => o + 1);
+                  else if (range === "month") setMonthOffset((o) => o + 1);
+                  else setYearOffset((o) => o + 1);
+                }}
+              >
+                →
+              </Button>
+            </div>
+          )}
 
           {range === "custom" && (
             <DateRangePicker
