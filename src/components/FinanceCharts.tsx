@@ -27,6 +27,7 @@ const PIE_COLORS = [
 
 interface Props {
   records: FinanceRecord[];
+  onDayClick?: (isoDay: string) => void;
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -38,7 +39,7 @@ function getSubName(r: FinanceRecord): string {
   return r.category_rel.parent ? r.category_rel.name : "(主分类直接)";
 }
 
-export default function FinanceCharts({ records }: Props) {
+export default function FinanceCharts({ records, onDayClick }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
 
   if (records.length === 0)
@@ -59,6 +60,7 @@ export default function FinanceCharts({ records }: Props) {
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([isoDay, v]) => ({
       day: `${isoDay.slice(5, 7)}/${isoDay.slice(8, 10)}`,
+      isoDay,
       ...v,
     }));
 
@@ -126,12 +128,16 @@ export default function FinanceCharts({ records }: Props) {
               name="收入"
               fill="#10b981"
               radius={[4, 4, 0, 0]}
+              style={onDayClick ? { cursor: "pointer" } : undefined}
+              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
             />
             <Bar
               dataKey="expense"
               name="支出"
               fill="#ef4444"
               radius={[4, 4, 0, 0]}
+              style={onDayClick ? { cursor: "pointer" } : undefined}
+              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
             />
           </BarChart>
         </ResponsiveContainer>

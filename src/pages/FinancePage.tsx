@@ -84,7 +84,7 @@ export default function FinancePage() {
       if (r === "custom") {
         if (!dateFrom || !dateTo) return Promise.resolve();
         return doLoad(
-          new Date(dateFrom).toISOString(),
+          new Date(dateFrom + "T00:00:00").toISOString(),
           new Date(dateTo + "T23:59:59").toISOString(),
         );
       }
@@ -239,7 +239,20 @@ export default function FinancePage() {
           )}
         </div>
 
-        {showChart && <FinanceCharts records={records} />}
+        {showChart && (
+          <FinanceCharts
+            records={records}
+            onDayClick={(isoDay) => {
+              setRange("custom");
+              setCustomFrom(isoDay);
+              setCustomTo(isoDay);
+              doLoad(
+                new Date(isoDay + "T00:00:00").toISOString(),
+                new Date(isoDay + "T23:59:59").toISOString(),
+              );
+            }}
+          />
+        )}
 
         <div className="space-y-2">
           {records.map((r) => {
