@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -27,6 +27,8 @@ const PIE_COLORS = [
 
 interface Props {
   records: FinanceRecord[];
+  onDayClick?: (isoDay: string) => void;
+  onCategorySelect?: (category: string | null) => void;
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -38,7 +40,7 @@ function getSubName(r: FinanceRecord): string {
   return r.category_rel.parent ? r.category_rel.name : "(主分类直接)";
 }
 
-export default function FinanceCharts({ records }: Props) {
+export default function FinanceCharts({ records, onDayClick, onCategorySelect }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
 
   if (records.length === 0)
@@ -59,6 +61,7 @@ export default function FinanceCharts({ records }: Props) {
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([isoDay, v]) => ({
       day: `${isoDay.slice(5, 7)}/${isoDay.slice(8, 10)}`,
+      isoDay,
       ...v,
     }));
 
@@ -71,7 +74,8 @@ export default function FinanceCharts({ records }: Props) {
   }, {});
 
   // activeDrill is only valid if the category still exists in current data
-  const activeDrill = drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
+  const activeDrill =
+    drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
 
   const pieAggregation = activeDrill
     ? expenses
@@ -111,7 +115,7 @@ export default function FinanceCharts({ records }: Props) {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border">
+      <div className="bg-white rounded-xl p-4 shadow-sm border [&_*:focus]:outline-none [&_*]:focus:outline-none">
         <h3 className="text-sm font-medium text-gray-600 mb-3">每日收支</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={barData}>
@@ -125,12 +129,16 @@ export default function FinanceCharts({ records }: Props) {
               name="收入"
               fill="#10b981"
               radius={[4, 4, 0, 0]}
+              style={onDayClick ? { cursor: "pointer" } : undefined}
+              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
             />
             <Bar
               dataKey="expense"
               name="支出"
               fill="#ef4444"
               radius={[4, 4, 0, 0]}
+              style={onDayClick ? { cursor: "pointer" } : undefined}
+              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
             />
           </BarChart>
         </ResponsiveContainer>
@@ -143,7 +151,7 @@ export default function FinanceCharts({ records }: Props) {
               className={
                 activeDrill ? "underline text-indigo-600" : "font-medium"
               }
-              onClick={() => setDrillCategory(null)}
+              onClick={() => { setDrillCategory(null); onCategorySelect?.(null); }}
             >
               支出分布
             </button>
@@ -169,7 +177,10 @@ export default function FinanceCharts({ records }: Props) {
                   activeDrill
                     ? undefined
                     : (entry: { name?: string }) => {
-                        if (entry.name) setDrillCategory(entry.name);
+                        if (entry.name) {
+                          setDrillCategory(entry.name);
+                          onCategorySelect?.(entry.name);
+                        }
                       }
                 }
                 style={{ cursor: activeDrill ? "default" : "pointer" }}
@@ -195,3 +206,4 @@ export default function FinanceCharts({ records }: Props) {
     </div>
   );
 }
+
