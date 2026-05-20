@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import {
   BellAlertIcon,
@@ -96,7 +97,7 @@ function buildFeed(
       id: `r-${r.id}`,
       type: "reminder",
       title: r.message,
-      subtitle: `提醒时间：${new Date(r.trigger_at).toLocaleString("zh-CN")}`,
+      subtitle: `提醒时间：${dayjs(r.trigger_at).format("YYYY/MM/DD HH:mm")}`,
       timestamp: new Date(r.created_at).getTime(),
     }),
   );
@@ -147,26 +148,17 @@ export default function HomePage() {
   }>({ kind: "idle", text: "" });
   const { scheduleOne } = useRemindersContext();
 
-  const [financeFromDay] = useState(() => {
-    // 使用 UTC+8 本地日期，避免 UTC 日期在 16:00~24:00 UTC 时早一天
-    const localDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000);
-    return localDate.toISOString().slice(0, 10);
-  });
+  const [financeFrom] = useState(() =>
+    dayjs().subtract(30, "day").startOf("day").valueOf(),
+  );
 
   const remindersRes = useResource(CACHE_KEYS.reminders, () =>
     reminderApi.getAll(),
   );
   const todosRes = useResource(CACHE_KEYS.todos, () => todoApi.getAll());
-  const financeRes = useResource(CACHE_KEYS.finance(financeFromDay), () => {
-    // to: 当天 UTC+8 23:59:59，覆盖 AI 可能设置的当天晚些时候的 happened_at
-    const todayLocal = new Date(Date.now() + 8 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
-    const to = new Date(`${todayLocal}T23:59:59+08:00`).toISOString();
-    // from: 明确指定 +08:00，避免受浏览器本地时区影响
-    const from = new Date(`${financeFromDay}T00:00:00+08:00`).toISOString();
-    return financeApi.getAll(from, to);
-  });
+  const financeRes = useResource(CACHE_KEYS.finance(financeFrom), () =>
+    financeApi.getAll(financeFrom, dayjs().endOf("day").valueOf()),
+  );
   const timersRes = useResource(CACHE_KEYS.timers, () => timerApi.getAll());
 
   const feed = useMemo(
@@ -183,9 +175,9 @@ export default function HomePage() {
   const refreshAll = useCallback(() => {
     invalidate(CACHE_KEYS.reminders);
     invalidate(CACHE_KEYS.todos);
-    invalidate(CACHE_KEYS.finance(financeFromDay));
+    invalidate(CACHE_KEYS.finance(financeFrom));
     invalidate(CACHE_KEYS.timers);
-  }, [financeFromDay]);
+  }, [financeFrom]);
 
   const applyQuick = useCallback((q: QuickAction) => {
     setInput(q.template);
@@ -214,7 +206,7 @@ export default function HomePage() {
             invalidate(CACHE_KEYS.reminders);
           } else if (type === "finance") {
             await financeApi.create(text);
-            invalidate(CACHE_KEYS.finance(financeFromDay));
+            invalidate(CACHE_KEYS.finance(financeFrom));
           } else if (type === "todo") {
             await todoApi.create(text, []);
             invalidate(CACHE_KEYS.todos);
@@ -235,7 +227,7 @@ export default function HomePage() {
     } finally {
       setSubmitting(false);
     }
-  }, [input, submitting, scheduleOne, financeFromDay]);
+  }, [input, submitting, scheduleOne, financeFrom]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -345,12 +337,7 @@ export default function HomePage() {
                         {item.subtitle}
                       </p>
                       <p className="text-xs text-muted-foreground/50 flex-shrink-0">
-                        {new Date(item.timestamp).toLocaleString("zh-CN", {
-                          month: "numeric",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {dayjs(item.timestamp).format("M/D HH:mm")}
                       </p>
                     </div>
                   </div>

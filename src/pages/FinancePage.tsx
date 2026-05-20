@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import dayjs from "dayjs";
 import { useConfirm } from "../hooks/useConfirm";
 import { financeApi } from "../api/finance";
 import type { FinanceRecord } from "../api/finance";
@@ -13,80 +14,50 @@ import { DateRangePicker } from "@/components/DateRangePicker";
 
 type Range = "today" | "week" | "month" | "year" | "custom";
 
-const APP_TZ_OFFSET_MS = 8 * 60 * 60 * 1000;
-
-// 当天 UTC+8 23:59:59 对应的 UTC 时间，作为查询上界
-// 避免 AI 把 happened_at 设为当天稍后（UTC+8）时被 now.toISOString() 截断
-function endOfTodayUTC8(): string {
-  const localDay = new Date(Date.now() + APP_TZ_OFFSET_MS).toISOString().slice(0, 10);
-  return new Date(`${localDay}T23:59:59+08:00`).toISOString();
-}
-
 function getRangeDates(
   range: Exclude<Range, "custom">,
   offset = 0,
-): { from: string; to: string } {
-  const now = new Date();
-  const to = endOfTodayUTC8();
+): { from: number; to: number } {
+  const now = dayjs();
+  const todayEnd = now.endOf("day").valueOf();
+
   if (range === "today") {
-    const from = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    ).toISOString();
-    return { from, to };
+    return { from: now.startOf("day").valueOf(), to: todayEnd };
   }
   if (range === "week") {
-    const dow = now.getDay();
+    const dow = now.day(); // 0=Sun, 1=Mon … 6=Sat
     const daysToMon = dow === 0 ? 6 : dow - 1;
-    const monday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - daysToMon + offset * 7,
-    );
-    const sunday = new Date(
-      monday.getFullYear(),
-      monday.getMonth(),
-      monday.getDate() + 6,
-      23, 59, 59,
-    );
-    return { from: monday.toISOString(), to: offset >= 0 ? to : sunday.toISOString() };
+    const monday = now.subtract(daysToMon, "day").add(offset * 7, "day").startOf("day");
+    const sunday = monday.add(6, "day").endOf("day");
+    return { from: monday.valueOf(), to: offset >= 0 ? todayEnd : sunday.valueOf() };
   }
   if (range === "year") {
-    const firstDay = new Date(now.getFullYear() + offset, 0, 1);
-    const lastDay = new Date(now.getFullYear() + offset + 1, 0, 0, 23, 59, 59);
-    return { from: firstDay.toISOString(), to: offset >= 0 ? to : lastDay.toISOString() };
+    const y = now.add(offset, "year");
+    return { from: y.startOf("year").valueOf(), to: offset >= 0 ? todayEnd : y.endOf("year").valueOf() };
   }
   // month
-  const firstDay = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0, 23, 59, 59);
-  return { from: firstDay.toISOString(), to: offset >= 0 ? to : lastDay.toISOString() };
+  const m = now.add(offset, "month");
+  return { from: m.startOf("month").valueOf(), to: offset >= 0 ? todayEnd : m.endOf("month").valueOf() };
 }
 
 function getPeriodLabel(range: "week" | "month" | "year", offset: number): string {
-  const now = new Date();
+  const now = dayjs();
   if (range === "week") {
-    const dow = now.getDay();
+    const dow = now.day();
     const daysToMon = dow === 0 ? 6 : dow - 1;
-    const monday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - daysToMon + offset * 7,
-    );
-    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
-    return `${fmt(monday)} ~ ${fmt(sunday)}`;
+    const monday = now.subtract(daysToMon, "day").add(offset * 7, "day");
+    const sunday = monday.add(6, "day");
+    return `${monday.format("M/D")} ~ ${sunday.format("M/D")}`;
   }
   if (range === "year") {
-    return `${now.getFullYear() + offset}年`;
+    return `${now.add(offset, "year").year()}年`;
   }
-  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-  return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+  const d = now.add(offset, "month");
+  return `${d.year()}年${d.month() + 1}月`;
 }
 
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function todayStr(): string {
+  return dayjs().format("YYYY-MM-DD");
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -116,7 +87,7 @@ export default function FinancePage() {
   const { confirm, dialog } = useConfirm();
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const doLoad = useCallback(async (from: string, to: string) => {
+  const doLoad = useCallback(async (from: number, to: number) => {
     setError("");
     try {
       const data = await financeApi.getAll(from, to);
@@ -131,8 +102,8 @@ export default function FinancePage() {
       if (r === "custom") {
         if (!dateFrom || !dateTo) return Promise.resolve();
         return doLoad(
-          new Date(dateFrom + "T00:00:00").toISOString(),
-          new Date(dateTo + "T23:59:59").toISOString(),
+          dayjs(dateFrom).startOf("day").valueOf(),
+          dayjs(dateTo).endOf("day").valueOf(),
         );
       }
       const offset = r === "week" ? weekOff : r === "month" ? monthOff : r === "year" ? yearOff : 0;
@@ -333,8 +304,8 @@ export default function FinancePage() {
               setCustomFrom(isoDay);
               setCustomTo(isoDay);
               doLoad(
-                new Date(isoDay + "T00:00:00").toISOString(),
-                new Date(isoDay + "T23:59:59").toISOString(),
+                dayjs(isoDay).startOf("day").valueOf(),
+                dayjs(isoDay).endOf("day").valueOf(),
               );
             }}
           />
@@ -391,7 +362,7 @@ export default function FinancePage() {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(r.happened_at).toLocaleString("zh-CN")}
+                      {dayjs(r.happened_at).format("YYYY/MM/DD HH:mm")}
                     </span>
                     <Button
                       variant="ghost"
@@ -423,4 +394,3 @@ export default function FinancePage() {
     </>
   );
 }
-

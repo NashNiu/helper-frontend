@@ -4,6 +4,6 @@
 export const CACHE_KEYS = {
   reminders: 'reminders:all',
   todos: 'todos:all',
-  finance: (from: string) => `finance:since:${from}`,
+  finance: (from: number) => `finance:since:${from}`,
   timers: 'timers:all',
 } as const;

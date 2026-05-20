@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 import { useConfirm } from '../hooks/useConfirm';
 import { reminderApi } from '../api/reminder';
 import type { Reminder } from '../api/reminder';
@@ -92,7 +93,7 @@ export default function ReminderPage() {
                     <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{r.message}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(r.trigger_at).toLocaleString('zh-CN')}</p>
+                      <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -122,7 +123,7 @@ export default function ReminderPage() {
                     <CheckCircleIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-muted-foreground">{r.message}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(r.trigger_at).toLocaleString('zh-CN')}</p>
+                      <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
                     </div>
                     <Button
                       variant="ghost"
