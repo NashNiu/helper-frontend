@@ -13,12 +13,21 @@ import { DateRangePicker } from "@/components/DateRangePicker";
 
 type Range = "today" | "week" | "month" | "year" | "custom";
 
+const APP_TZ_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+// 当天 UTC+8 23:59:59 对应的 UTC 时间，作为查询上界
+// 避免 AI 把 happened_at 设为当天稍后（UTC+8）时被 now.toISOString() 截断
+function endOfTodayUTC8(): string {
+  const localDay = new Date(Date.now() + APP_TZ_OFFSET_MS).toISOString().slice(0, 10);
+  return new Date(`${localDay}T23:59:59+08:00`).toISOString();
+}
+
 function getRangeDates(
   range: Exclude<Range, "custom">,
   offset = 0,
 ): { from: string; to: string } {
   const now = new Date();
-  const to = now.toISOString();
+  const to = endOfTodayUTC8();
   if (range === "today") {
     const from = new Date(
       now.getFullYear(),

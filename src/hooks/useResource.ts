@@ -46,6 +46,19 @@ export function invalidate(key: string): void {
   notify(entry);
 }
 
+/**
+ * 切换登录账号或登出时调用：清空所有缓存数据，避免上一位用户的列表泄露到下一位。
+ * 保留 listeners 让仍挂载的组件下次拉取新用户的数据。
+ */
+export function invalidateAll(): void {
+  for (const entry of cache.values()) {
+    entry.data = undefined;
+    entry.error = undefined;
+    entry.fetchedAt = 0;
+    notify(entry);
+  }
+}
+
 export interface UseResourceOptions {
   /** 缓存新鲜期，毫秒，默认 30s。0 表示永不自动失效（仍可手动 invalidate） */
   ttlMs?: number;
