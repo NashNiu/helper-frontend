@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import dayjs from "dayjs";
 import { timerApi } from "../api/timer";
 import type { Timer } from "../api/timer";
 import { useActiveTimer } from "../contexts/useActiveTimer";
@@ -81,8 +82,7 @@ function PomodoroSetup({
   const breakMin = Math.round(breakTimer.duration_seconds / 60);
   const totalMin = cycles * workMin + (cycles - 1) * breakMin;
   const endTimeStr = useMemo(() => {
-    const end = new Date(mountMs + totalMin * 60 * 1000);
-    return end.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    return dayjs(mountMs + totalMin * 60 * 1000).format("HH:mm");
   }, [mountMs, totalMin]);
 
   const handleStart = () => {

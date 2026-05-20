@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import dayjs from "dayjs";
 import {
   BarChart,
   Bar,
@@ -69,8 +70,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
   const byDay = records.reduce<
     Record<string, { income: number; expense: number }>
   >((acc, r) => {
-    const d = new Date(r.happened_at);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const key = dayjs(r.happened_at).format("YYYY-MM-DD");
     if (!acc[key]) acc[key] = { income: 0, expense: 0 };
     if (r.amount > 0) acc[key].income += r.amount;
     else acc[key].expense += Math.abs(r.amount);

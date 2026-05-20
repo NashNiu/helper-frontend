@@ -22,7 +22,7 @@ export interface FinanceRecord {
 }
 
 export const financeApi = {
-  getAll: (from?: string, to?: string) =>
+  getAll: (from?: number, to?: number) =>
     http
       .get<FinanceRecord[]>('/api/finance', { params: { from, to } })
       .then((r) => r.data),
