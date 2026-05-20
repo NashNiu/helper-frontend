@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/DateRangePicker";
+import { Spinner } from "@/components/ui/spinner";
 
 type Range = "today" | "week" | "month" | "year" | "custom";
 
@@ -73,6 +74,8 @@ export default function FinancePage() {
   const [records, setRecords] = useState<FinanceRecord[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [range, setRange] = useState<Range>("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
@@ -89,11 +92,14 @@ export default function FinancePage() {
 
   const doLoad = useCallback(async (from: number, to: number) => {
     setError("");
+    setListLoading(true);
     try {
       const data = await financeApi.getAll(from, to);
       setRecords(data);
     } catch (err) {
       setError(getErrorMessage(err, "加载记录失败，请重试"));
+    } finally {
+      setListLoading(false);
     }
   }, []);
 
@@ -118,13 +124,14 @@ export default function FinancePage() {
     const offset = range === "week" ? weekOffset : range === "month" ? monthOffset : range === "year" ? yearOffset : 0;
     let cancelled = false;
     const { from, to } = getRangeDates(range, offset);
+    setListLoading(true);
     financeApi
       .getAll(from, to)
       .then((data) => {
-        if (!cancelled) setRecords(data);
+        if (!cancelled) { setRecords(data); setListLoading(false); }
       })
       .catch((err) => {
-        if (!cancelled) setError(getErrorMessage(err, "加载记录失败，请重试"));
+        if (!cancelled) { setError(getErrorMessage(err, "加载记录失败，请重试")); setListLoading(false); }
       });
     return () => {
       cancelled = true;
@@ -162,11 +169,14 @@ export default function FinancePage() {
   const handleDelete = async (id: number) => {
     if (!(await confirm("确认删除这条记录？"))) return;
     setError("");
+    setDeletingIds(prev => new Set(prev).add(id));
     try {
       await financeApi.remove(id);
       setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       setError(getErrorMessage(err, "删除失败，请重试"));
+    } finally {
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
   };
 
@@ -201,6 +211,7 @@ export default function FinancePage() {
                 className="flex-1"
               />
               <Button onClick={handleCreate} disabled={loading}>
+                {loading ? <Spinner className="h-4 w-4 mr-1" /> : null}
                 {loading ? "解析中…" : "记录"}
               </Button>
             </div>
@@ -311,6 +322,11 @@ export default function FinancePage() {
           />
         )}
 
+        {listLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner className="text-muted-foreground" />
+          </div>
+        ) : (
         <div className="space-y-2">
           {filterCategory && (
             <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
@@ -368,10 +384,11 @@ export default function FinancePage() {
                       variant="ghost"
                       size="xs"
                       onClick={() => handleDelete(r.id)}
+                      disabled={deletingIds.has(r.id)}
                       aria-label="删除记录"
                       className="text-destructive hover:text-destructive"
                     >
-                      删除
+                      {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : "删除"}
                     </Button>
                   </div>
                 </CardContent>
@@ -384,6 +401,7 @@ export default function FinancePage() {
             </p>
           )}
         </div>
+        )}
       </div>
 
       <CategoryModal

@@ -26,6 +26,7 @@ import { CACHE_KEYS } from "../api/cacheKeys";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 const TYPE_META: Record<
   AssistantType,
@@ -308,7 +309,11 @@ export default function HomePage() {
             刷新
           </Button>
         </div>
-        {feed.length === 0 ? (
+        {(remindersRes.loading || todosRes.loading || financeRes.loading || timersRes.loading) && feed.length === 0 ? (
+          <div className="flex justify-center py-10">
+            <Spinner className="text-muted-foreground" />
+          </div>
+        ) : feed.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
             还没有记录，从上面输入开始吧～
           </p>

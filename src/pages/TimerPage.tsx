@@ -8,6 +8,7 @@ import { formatRemaining } from "../contexts/ActiveTimerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 // ── 普通计时器显示 ────────────────────────────────────────────────────────────
 function TimerDisplay({ timer, onBack }: { timer: Timer; onBack: () => void }) {
@@ -212,36 +213,46 @@ export default function TimerPage() {
   const [selected, setSelected] = useState<Timer | null>(null);
   const [newName, setNewName] = useState("");
   const [newMinutes, setNewMinutes] = useState("");
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState("");
   const { active } = useActiveTimer();
 
   useEffect(() => {
     timerApi
       .getAll()
-      .then(setTimers)
-      .catch(() => setError("加载计时器失败，请刷新重试"));
+      .then(data => { setTimers(data); setFetchLoading(false); })
+      .catch(() => { setError("加载计时器失败，请刷新重试"); setFetchLoading(false); });
   }, []);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newMinutes) return;
     const mins = Number(newMinutes);
-    if (isNaN(mins) || mins <= 0) {
-      setError("请输入有效的分钟数");
-      return;
-    }
-    const t = await timerApi.create(newName.trim(), Math.round(mins * 60));
-    setTimers((prev) => [...prev, t]);
-    setNewName("");
-    setNewMinutes("");
+    if (isNaN(mins) || mins <= 0) { setError("请输入有效的分钟数"); return; }
+    setCreating(true);
     setError("");
+    try {
+      const t = await timerApi.create(newName.trim(), Math.round(mins * 60));
+      setTimers((prev) => [...prev, t]);
+      setNewName("");
+      setNewMinutes("");
+    } catch {
+      setError("创建计时器失败，请重试");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
+    setDeletingIds(prev => new Set(prev).add(id));
     try {
       await timerApi.remove(id);
       setTimers((prev) => prev.filter((t) => t.id !== id));
     } catch {
       setError("删除计时器失败，请重试");
+    } finally {
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
   };
 
@@ -270,51 +281,59 @@ export default function TimerPage() {
       <h1 className="text-2xl font-semibold text-foreground">计时器</h1>
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {timers.map((t) => {
-          const isPomodoro = t.type === "pomodoro";
-          const isActiveTimer = active && !active.pomodoro && active.timer.id === t.id;
-          const isPomodoroActive = isPomodoro && !!active?.pomodoro;
-          return (
-            <Card
-              key={t.id}
-              className={`transition-colors ${isActiveTimer || isPomodoroActive ? "border-foreground/20 bg-muted/50" : "hover:bg-muted"}`}
-            >
-              <CardContent className="p-4">
-                <button onClick={() => setSelected(t)} className="w-full text-left cursor-pointer">
-                  <p className="font-medium text-foreground">{t.name}</p>
-                  {isPomodoro
-                    ? <p className="text-sm text-muted-foreground mt-1">番茄工作法</p>
-                    : <p className="text-sm text-muted-foreground mt-1">{Math.floor(t.duration_seconds / 60)} 分钟</p>}
-                  {isActiveTimer && (
-                    <p className="text-xs text-foreground/70 mt-1">
-                      {active.status === "running" ? `运行中 ${active.formatted}` : active.status === "paused" ? `已暂停 ${active.formatted}` : "已完成"}
-                    </p>
+      {fetchLoading ? (
+        <div className="flex justify-center py-10">
+          <Spinner className="text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {timers.map((t) => {
+            const isPomodoro = t.type === "pomodoro";
+            const isActiveTimer = active && !active.pomodoro && active.timer.id === t.id;
+            const isPomodoroActive = isPomodoro && !!active?.pomodoro;
+            const deleting = deletingIds.has(t.id);
+            return (
+              <Card
+                key={t.id}
+                className={`transition-colors ${isActiveTimer || isPomodoroActive ? "border-foreground/20 bg-muted/50" : "hover:bg-muted"}`}
+              >
+                <CardContent className="p-4">
+                  <button onClick={() => setSelected(t)} className="w-full text-left cursor-pointer">
+                    <p className="font-medium text-foreground">{t.name}</p>
+                    {isPomodoro
+                      ? <p className="text-sm text-muted-foreground mt-1">番茄工作法</p>
+                      : <p className="text-sm text-muted-foreground mt-1">{Math.floor(t.duration_seconds / 60)} 分钟</p>}
+                    {isActiveTimer && (
+                      <p className="text-xs text-foreground/70 mt-1">
+                        {active.status === "running" ? `运行中 ${active.formatted}` : active.status === "paused" ? `已暂停 ${active.formatted}` : "已完成"}
+                      </p>
+                    )}
+                    {isPomodoroActive && (
+                      <p className="text-xs text-foreground/70 mt-1">
+                        {active!.pomodoro!.phase === "work" ? "工作中" : "休息中"} · 第 {active!.pomodoro!.currentCycle}/{active!.pomodoro!.totalCycles} 轮
+                        {active!.status === "running" ? ` · ${active!.formatted}` : " · 已暂停"}
+                      </p>
+                    )}
+                  </button>
+                  {!t.is_preset && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => handleDelete(t.id)}
+                      disabled={deleting}
+                      className="mt-2 text-destructive hover:text-destructive px-0"
+                    >
+                      {deleting ? <Spinner className="h-3 w-3" /> : '删除'}
+                    </Button>
                   )}
-                  {isPomodoroActive && (
-                    <p className="text-xs text-foreground/70 mt-1">
-                      {active!.pomodoro!.phase === "work" ? "工作中" : "休息中"} · 第 {active!.pomodoro!.currentCycle}/{active!.pomodoro!.totalCycles} 轮
-                      {active!.status === "running" ? ` · ${active!.formatted}` : " · 已暂停"}
-                    </p>
-                  )}
-                </button>
-                {!t.is_preset && (
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => handleDelete(t.id)}
-                    className="mt-2 text-destructive hover:text-destructive px-0"
-                  >
-                    删除
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-      <Card className="">
+      <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-medium text-gray-700 dark:text-gray-200">自定义计时器</CardTitle>
         </CardHeader>
@@ -335,7 +354,10 @@ export default function TimerPage() {
               min="1"
               className="w-24"
             />
-            <Button onClick={handleCreate}>添加</Button>
+            <Button onClick={handleCreate} disabled={creating}>
+              {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
+              {creating ? '添加中…' : '添加'}
+            </Button>
           </div>
         </CardContent>
       </Card>
