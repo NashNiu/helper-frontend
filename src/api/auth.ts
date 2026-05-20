@@ -14,8 +14,17 @@ export interface LoginResult {
 }
 
 export const authApi = {
-  register: (data: { username: string; email: string; password: string }) =>
-    http.post<LoginResult>('/api/auth/register', data).then((r) => r.data),
+  sendVerificationCode: (email: string) =>
+    http
+      .post('/api/auth/send-verification-code', { email })
+      .then(() => undefined),
+
+  register: (data: {
+    username: string;
+    email: string;
+    password: string;
+    code: string;
+  }) => http.post<LoginResult>('/api/auth/register', data).then((r) => r.data),
 
   login: (identifier: string, password: string) =>
     http

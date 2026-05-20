@@ -14,14 +14,10 @@ interface AuthProviderProps {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [status, setStatus] = useState<AuthContextValue['status']>(
-    () => (getStoredToken() ? 'initializing' : 'unauthenticated'),
+  const [status, setStatus] = useState<AuthContextValue['status']>(() =>
+    getStoredToken() ? 'initializing' : 'unauthenticated',
   );
 
-  /**
-   * 启动时如果有 token，拉一次 /auth/me 确认有效。
-   * 失败会通过 http 拦截器的 401 事件统一走 logout。
-   */
   useEffect(() => {
     if (status !== 'initializing') return;
     let cancelled = false;
@@ -69,7 +65,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const register = useCallback(
-    async (input: { username: string; email: string; password: string }) => {
+    async (input: {
+      username: string;
+      email: string;
+      password: string;
+      code: string;
+    }) => {
       const result = await authApi.register(input);
       setStoredToken(result.access_token);
       invalidateAll();
