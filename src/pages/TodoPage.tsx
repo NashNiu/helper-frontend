@@ -9,31 +9,41 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [operatingIds, setOperatingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { confirm, dialog } = useConfirm();
 
+  const addOp = (id: number) => setOperatingIds(prev => new Set(prev).add(id));
+  const removeOp = (id: number) => setOperatingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const data = await todoApi.getAll();
-        setTodos(data);
+        if (!cancelled) setTodos(data);
       } catch (err) {
-        setError(getErrorMessage(err, '加载待办失败，请刷新重试'));
+        if (!cancelled) setError(getErrorMessage(err, '加载待办失败，请刷新重试'));
+      } finally {
+        if (!cancelled) setFetchLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleCreate = async () => {
     if (!content.trim()) return;
     setError('');
-    setLoading(true);
+    setCreating(true);
     try {
       const todo = await todoApi.create(content, pendingFiles);
       setTodos(prev => [todo, ...prev]);
@@ -41,28 +51,31 @@ export default function TodoPage() {
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       setError(getErrorMessage(err, '创建待办失败，请重试'));
-    } finally { setLoading(false); }
+    } finally { setCreating(false); }
   };
 
   const handleToggle = async (todo: Todo) => {
+    if (operatingIds.has(todo.id)) return;
     setError('');
+    addOp(todo.id);
     try {
       const updated = await todoApi.update(todo.id, { is_done: !todo.is_done });
       setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
     } catch (err) {
       setError(getErrorMessage(err, '更新待办失败，请重试'));
-    }
+    } finally { removeOp(todo.id); }
   };
 
   const handleDelete = async (id: number) => {
     if (!await confirm('确认删除这条待办？相关图片也会一并删除。')) return;
     setError('');
+    addOp(id);
     try {
       await todoApi.remove(id);
       setTodos(prev => prev.filter(t => t.id !== id));
     } catch (err) {
       setError(getErrorMessage(err, '删除待办失败，请重试'));
-    }
+    } finally { removeOp(id); }
   };
 
   const handleDeleteImage = async (todoId: number, imageId: number) => {
@@ -89,7 +102,7 @@ export default function TodoPage() {
             <Input
               value={content}
               onChange={e => setContent(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
+              onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
               placeholder="添加待办..."
               className="flex-1"
             />
@@ -107,8 +120,9 @@ export default function TodoPage() {
                 </span>
               )}
             </Button>
-            <Button onClick={handleCreate} disabled={loading} variant="default">
-              添加
+            <Button onClick={handleCreate} disabled={creating} variant="default">
+              {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
+              {creating ? '添加中…' : '添加'}
             </Button>
           </div>
           <input
@@ -131,17 +145,37 @@ export default function TodoPage() {
         </CardContent>
       </Card>
 
-      <TodoList title="待完成" items={pending} onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage} />
-      {done.length > 0 && (
-        <TodoList title="已完成" items={done} onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage} />
+      {fetchLoading ? (
+        <div className="flex justify-center py-10">
+          <Spinner className="text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          <TodoList
+            title="待完成" items={pending}
+            operatingIds={operatingIds}
+            onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
+          />
+          {done.length > 0 && (
+            <TodoList
+              title="已完成" items={done}
+              operatingIds={operatingIds}
+              onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
+            />
+          )}
+          {pending.length === 0 && done.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">暂无待办</p>
+          )}
+        </>
       )}
       {dialog}
     </div>
   );
 }
 
-function TodoList({ title, items, onToggle, onDelete, onDeleteImage }: {
+function TodoList({ title, items, operatingIds, onToggle, onDelete, onDeleteImage }: {
   title: string; items: Todo[];
+  operatingIds: Set<number>;
   onToggle: (t: Todo) => void; onDelete: (id: number) => void;
   onDeleteImage: (todoId: number, imageId: number) => void;
 }) {
@@ -151,33 +185,42 @@ function TodoList({ title, items, onToggle, onDelete, onDeleteImage }: {
     <div className={isDoneList ? 'opacity-70' : undefined}>
       <h2 className="text-sm font-medium text-muted-foreground mb-2">{title}（{items.length}）</h2>
       <div className="space-y-2">
-        {items.map(todo => (
-          <Card key={todo.id} className={todo.is_done ? 'bg-muted/40' : undefined}>
-            <CardContent className="pt-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={todo.is_done}
-                  onCheckedChange={() => onToggle(todo)}
-                  aria-label={`标记 ${todo.content} 为${todo.is_done ? '未完成' : '已完成'}`}
-                  className="mt-0.5"
-                />
-                <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}>
-                  {todo.content}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => onDelete(todo.id)}
-                  aria-label="删除待办"
-                >
-                  删除
-                </Button>
-              </div>
-              <ImageGallery images={todo.images} onDelete={imageId => onDeleteImage(todo.id, imageId)} />
-            </CardContent>
-          </Card>
-        ))}
+        {items.map(todo => {
+          const busy = operatingIds.has(todo.id);
+          return (
+            <Card key={todo.id} className={todo.is_done ? 'bg-muted/40' : undefined}>
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                    {busy ? (
+                      <Spinner className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Checkbox
+                        checked={todo.is_done}
+                        onCheckedChange={() => onToggle(todo)}
+                        aria-label={`标记 ${todo.content} 为${todo.is_done ? '未完成' : '已完成'}`}
+                      />
+                    )}
+                  </div>
+                  <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}>
+                    {todo.content}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => onDelete(todo.id)}
+                    disabled={busy}
+                    aria-label="删除待办"
+                  >
+                    {busy ? <Spinner className="h-4 w-4" /> : '删除'}
+                  </Button>
+                </div>
+                <ImageGallery images={todo.images} onDelete={imageId => onDeleteImage(todo.id, imageId)} />
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

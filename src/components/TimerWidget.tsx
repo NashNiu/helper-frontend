@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Timer, Coffee, Flame } from 'lucide-react';
 
 export default function TimerWidget() {
-  const { active, pause, resume, reset, clear } = useActiveTimer();
+  const { active, pause, resume, reset, clear, advancePomodoro } = useActiveTimer();
   if (!active) return null;
 
   const isRunning = active.status === 'running';
@@ -47,6 +47,9 @@ export default function TimerWidget() {
         )}
         {(isRunning || isPaused) && (
           <Button size="xs" variant="outline" onClick={reset}>重置</Button>
+        )}
+        {isDone && pomodoro && pomodoro.currentCycle < pomodoro.totalCycles && (
+          <Button size="xs" onClick={advancePomodoro} className="bg-emerald-500 hover:bg-emerald-600 text-white border-0">继续</Button>
         )}
         {isDone && (
           <Button size="xs" variant="outline" onClick={clear}>关闭</Button>

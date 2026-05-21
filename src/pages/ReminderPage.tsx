@@ -10,11 +10,14 @@ import { BellAlertIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function ReminderPage() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState('');
   const { scheduleOne } = useRemindersContext();
   const { confirm, dialog } = useConfirm();
@@ -27,6 +30,8 @@ export default function ReminderPage() {
         if (!cancelled) setReminders(data);
       } catch (err) {
         if (!cancelled) setError(getErrorMessage(err, '加载提醒失败，请刷新重试'));
+      } finally {
+        if (!cancelled) setFetchLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -34,7 +39,7 @@ export default function ReminderPage() {
 
   const handleCreate = async () => {
     if (!input.trim()) return;
-    setLoading(true);
+    setCreating(true);
     setError('');
     requestNotificationPermission().catch(() => {});
     try {
@@ -44,16 +49,19 @@ export default function ReminderPage() {
       setInput('');
     } catch (err) {
       setError(getErrorMessage(err, '创建失败，请检查输入重试'));
-    } finally { setLoading(false); }
+    } finally { setCreating(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!await confirm('确认删除这条提醒？')) return;
+    setDeletingIds(prev => new Set(prev).add(id));
     try {
       await reminderApi.remove(id);
       setReminders(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       setError(getErrorMessage(err, '删除失败，请重试'));
+    } finally {
+      setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
   };
 
@@ -71,75 +79,90 @@ export default function ReminderPage() {
             <Input
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !loading && handleCreate()}
+              onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
               placeholder="例：30分钟后提醒我提交日志"
               className="flex-1"
             />
-            <Button onClick={handleCreate} disabled={loading} variant="default">
-              {loading ? '解析中…' : '添加'}
+            <Button onClick={handleCreate} disabled={creating} variant="default">
+              {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
+              {creating ? '解析中…' : '添加'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {pending.length > 0 && (
-        <div>
-          <h2 className="text-sm font-medium text-muted-foreground mb-2">待触发</h2>
-          <div className="space-y-2">
-            {pending.map(r => (
-              <Card key={r.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3">
-                    <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{r.message}</p>
-                      <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(r.id)}
-                      aria-label="删除提醒"
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      {fetchLoading ? (
+        <div className="flex justify-center py-10">
+          <Spinner className="text-muted-foreground" />
         </div>
-      )}
+      ) : (
+        <>
+          {pending.length > 0 && (
+            <div>
+              <h2 className="text-sm font-medium text-muted-foreground mb-2">待触发</h2>
+              <div className="space-y-2">
+                {pending.map(r => (
+                  <Card key={r.id}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{r.message}</p>
+                          <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(r.id)}
+                          disabled={deletingIds.has(r.id)}
+                          aria-label="删除提醒"
+                        >
+                          {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {triggered.length > 0 && (
-        <div className="opacity-60">
-          <h2 className="text-sm font-medium text-muted-foreground mb-2">已触发</h2>
-          <div className="space-y-2">
-            {triggered.map(r => (
-              <Card key={r.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircleIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-muted-foreground">{r.message}</p>
-                      <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(r.id)}
-                      aria-label="删除提醒"
-                    >
-                      删除
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+          {triggered.length > 0 && (
+            <div className="opacity-60">
+              <h2 className="text-sm font-medium text-muted-foreground mb-2">已触发</h2>
+              <div className="space-y-2">
+                {triggered.map(r => (
+                  <Card key={r.id}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3">
+                        <CheckCircleIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-muted-foreground">{r.message}</p>
+                          <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(r.id)}
+                          disabled={deletingIds.has(r.id)}
+                          aria-label="删除提醒"
+                        >
+                          {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!fetchLoading && pending.length === 0 && triggered.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">暂无提醒</p>
+          )}
+        </>
       )}
       {dialog}
     </div>
