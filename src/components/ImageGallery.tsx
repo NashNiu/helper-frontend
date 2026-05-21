@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { TodoImage } from '../api/todo';
-import { useConfirm } from '../hooks/useConfirm';
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { TodoImage } from "../api/todo";
+import { useConfirm } from "../hooks/useConfirm";
 
 interface Props {
   images: TodoImage[];
@@ -13,40 +13,52 @@ export default function ImageGallery({ images, onDelete }: Props) {
 
   const isOpen = lightboxIndex !== null;
   const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
-  const safeIndex = lightboxIndex !== null
-    ? Math.min(lightboxIndex, sorted.length - 1)
-    : null;
+  const safeIndex =
+    lightboxIndex !== null ? Math.min(lightboxIndex, sorted.length - 1) : null;
 
   const { confirm, dialog } = useConfirm();
   const close = useCallback(() => setLightboxIndex(null), []);
-  const prev = useCallback(() => setLightboxIndex(i => Math.max(0, (i ?? 0) - 1)), []);
+  const prev = useCallback(
+    () => setLightboxIndex((i) => Math.max(0, (i ?? 0) - 1)),
+    [],
+  );
   const next = useCallback(() => {
-    setLightboxIndex(i => Math.min(sorted.length - 1, (i ?? 0) + 1));
+    setLightboxIndex((i) => Math.min(sorted.length - 1, (i ?? 0) + 1));
   }, [sorted.length]);
 
   // 键盘可达性：Esc 关闭，左右切换。打开时锁定 body 滚动并将焦点放到对话框。
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); close(); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        prev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        next();
+      }
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     dialogRef.current?.focus();
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [isOpen, close, prev, next]);
 
-  const handleDelete = useCallback(async (imageId: number) => {
-    if (!onDelete) return;
-    if (!await confirm('确认删除这张图片？此操作不可撤销。')) return;
-    onDelete(imageId);
-  }, [onDelete, confirm]);
+  const handleDelete = useCallback(
+    async (imageId: number) => {
+      if (!onDelete) return;
+      if (!(await confirm("确认删除这张图片？此操作不可撤销。"))) return;
+      onDelete(imageId);
+    },
+    [onDelete, confirm],
+  );
 
   if (images.length === 0) return null;
 
@@ -63,7 +75,7 @@ export default function ImageGallery({ images, onDelete }: Props) {
               aria-label={`查看第 ${i + 1} 张图片`}
             >
               <img
-                src={`/uploads/${img.image_path}`}
+                src={img.image_path}
                 alt=""
                 className="w-16 h-16 object-cover rounded-lg border hover:opacity-90"
               />
@@ -72,8 +84,19 @@ export default function ImageGallery({ images, onDelete }: Props) {
               <button
                 onClick={() => handleDelete(img.id)}
                 aria-label={`删除第 ${i + 1} 张图片`}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs hidden group-hover:flex items-center justify-center focus:flex"
-              >×</button>
+                className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-red-500 text-white rounded-full w-3.5 h-3.5 hidden group-hover:flex items-center justify-center focus:flex"
+              >
+                <svg
+                  viewBox="0 0 10 10"
+                  className="w-2 h-2"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <line x1="2" y1="2" x2="8" y2="8" />
+                  <line x1="8" y1="2" x2="2" y2="8" />
+                </svg>
+              </button>
             )}
           </div>
         ))}
@@ -92,28 +115,41 @@ export default function ImageGallery({ images, onDelete }: Props) {
           <button
             aria-label="上一张"
             className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-3xl px-2 hover:opacity-80"
-            onClick={e => { e.stopPropagation(); prev(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+            }}
             disabled={safeIndex === 0}
-          >‹</button>
+          >
+            ‹
+          </button>
           <img
-            src={`/uploads/${sorted[safeIndex].image_path}`}
+            src={sorted[safeIndex].image_path}
             alt=""
             className="max-h-[85vh] max-w-[85vw] rounded-lg"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           />
           <button
             aria-label="下一张"
             className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-3xl px-2 hover:opacity-80"
-            onClick={e => { e.stopPropagation(); next(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
             disabled={safeIndex === sorted.length - 1}
-          >›</button>
+          >
+            ›
+          </button>
           <button
             aria-label="关闭预览"
             className="absolute top-4 right-4 text-white text-xl px-2 hover:opacity-80"
             onClick={close}
-          >✕</button>
+          >
+            ✕
+          </button>
         </div>
       )}
     </>
   );
 }
+
