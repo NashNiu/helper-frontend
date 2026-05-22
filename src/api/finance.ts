@@ -33,5 +33,17 @@ export const financeApi = {
         { input },
       )
       .then((r) => r.data),
+  update: (
+    id: number,
+    data: {
+      amount?: number;
+      note?: string | null;
+      happened_at?: string;
+      category_id?: number;
+    },
+  ) =>
+    http
+      .patch<FinanceRecord>(`/api/finance/${id}`, data)
+      .then((r) => r.data),
   remove: (id: number) => http.delete(`/api/finance/${id}`),
 };

@@ -5,6 +5,9 @@ import { financeApi } from "../api/finance";
 import type { FinanceRecord } from "../api/finance";
 import FinanceCharts from "../components/FinanceCharts";
 import CategoryModal from "../components/CategoryModal";
+import { categoryApi } from "../api/category";
+import type { CategoryTree } from "../api/category";
+import EditFinanceModal from "../components/EditFinanceModal";
 import { getErrorMessage } from "../api/http";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +106,8 @@ export default function FinancePage() {
   const [error, setError] = useState("");
   const [newCatToast, setNewCatToast] = useState<string | null>(null);
   const { confirm, dialog } = useConfirm();
+  const [categories, setCategories] = useState<CategoryTree[]>([]);
+  const [editing, setEditing] = useState<FinanceRecord | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doLoad = useCallback(async (from: number, to: number) => {
@@ -195,6 +200,21 @@ export default function FinancePage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    categoryApi
+      .getAll()
+      .then((data) => {
+        if (!cancelled) setCategories(data);
+      })
+      .catch(() => {
+        /* 静默；编辑弹窗自身会提示 */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showCategoryModal]);
+
   const handleCreate = async () => {
     if (!input.trim()) return;
     setError("");
@@ -240,6 +260,19 @@ export default function FinancePage() {
         return s;
       });
     }
+  };
+
+  const handleSaved = (updated: FinanceRecord) => {
+    setRecords((prev) =>
+      prev
+        .map((r) => (r.id === updated.id ? updated : r))
+        .sort(
+          (a, b) =>
+            new Date(b.happened_at).getTime() -
+            new Date(a.happened_at).getTime(),
+        ),
+    );
+    setEditing(null);
   };
 
   const RANGE_LABELS: Record<Exclude<Range, "custom">, string> = {
@@ -467,20 +500,31 @@ export default function FinancePage() {
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {dayjs(r.happened_at).format("YYYY/MM/DD HH:mm")}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => handleDelete(r.id)}
-                        disabled={deletingIds.has(r.id)}
-                        aria-label="删除记录"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        {deletingIds.has(r.id) ? (
-                          <Spinner className="h-4 w-4" />
-                        ) : (
-                          "删除"
-                        )}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => setEditing(r)}
+                          disabled={deletingIds.has(r.id)}
+                          aria-label="编辑记录"
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => handleDelete(r.id)}
+                          disabled={deletingIds.has(r.id)}
+                          aria-label="删除记录"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          {deletingIds.has(r.id) ? (
+                            <Spinner className="h-4 w-4" />
+                          ) : (
+                            "删除"
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -501,6 +545,13 @@ export default function FinancePage() {
       <CategoryModal
         open={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
+      />
+      <EditFinanceModal
+        key={editing?.id ?? "none"}
+        record={editing}
+        categories={categories}
+        onClose={() => setEditing(null)}
+        onSaved={handleSaved}
       />
       {dialog}
     </>

@@ -7,6 +7,7 @@ import { useRemindersContext } from '../contexts/useRemindersContext';
 import { requestNotificationPermission } from '../utils/notify';
 import { getErrorMessage } from '../api/http';
 import { BellAlertIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import EditReminderModal from '../components/EditReminderModal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,8 +20,15 @@ export default function ReminderPage() {
   const [creating, setCreating] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState('');
-  const { scheduleOne } = useRemindersContext();
+  const [editing, setEditing] = useState<Reminder | null>(null);
+  const { scheduleOne, rescheduleOne } = useRemindersContext();
   const { confirm, dialog } = useConfirm();
+
+  const handleSaved = (updated: Reminder) => {
+    setReminders(prev => prev.map(r => r.id === updated.id ? updated : r));
+    rescheduleOne(updated);
+    setEditing(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -113,6 +121,15 @@ export default function ReminderPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => setEditing(r)}
+                          disabled={deletingIds.has(r.id)}
+                          aria-label="编辑提醒"
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="text-destructive hover:text-destructive"
                           onClick={() => handleDelete(r.id)}
                           disabled={deletingIds.has(r.id)}
@@ -164,6 +181,12 @@ export default function ReminderPage() {
           )}
         </>
       )}
+      <EditReminderModal
+        key={editing?.id ?? 'none'}
+        reminder={editing}
+        onClose={() => setEditing(null)}
+        onSaved={handleSaved}
+      />
       {dialog}
     </div>
   );

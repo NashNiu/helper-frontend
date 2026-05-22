@@ -44,6 +44,15 @@ export function useReminders(onTrigger: (reminder: Reminder) => void) {
     armNext();
   }, [onTrigger]);
 
+  const reschedule = useCallback((reminder: Reminder) => {
+    const existing = timersRef.current.get(reminder.id);
+    if (existing) {
+      clearTimeout(existing);
+      timersRef.current.delete(reminder.id);
+    }
+    schedule(reminder);
+  }, [schedule]);
+
   const loadAndSchedule = useCallback(async () => {
     const reminders = await reminderApi.getAll(false);
     reminders.forEach(schedule);
@@ -60,5 +69,5 @@ export function useReminders(onTrigger: (reminder: Reminder) => void) {
     };
   }, [loadAndSchedule]);
 
-  return { scheduleOne: schedule };
+  return { scheduleOne: schedule, rescheduleOne: reschedule };
 }

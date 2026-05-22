@@ -18,11 +18,11 @@ export default function RemindersProvider({ children }: { children: ReactNode })
     });
   }, []);
 
-  const { scheduleOne } = useReminders(handleTrigger);
+  const { scheduleOne, rescheduleOne } = useReminders(handleTrigger);
   const handleToastClose = useCallback(() => setToast(null), []);
 
   return (
-    <RemindersContext.Provider value={{ scheduleOne }}>
+    <RemindersContext.Provider value={{ scheduleOne, rescheduleOne }}>
       {toast && <NotificationToast message={`⏰ ${toast.message}`} onClose={handleToastClose} />}
       {children}
     </RemindersContext.Provider>

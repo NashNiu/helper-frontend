@@ -15,5 +15,7 @@ export const reminderApi = {
     http.post<Reminder>('/api/reminders', { input }).then(r => r.data),
   markTriggered: (id: number) =>
     http.patch<Reminder>(`/api/reminders/${id}/triggered`).then(r => r.data),
+  update: (id: number, data: { message?: string; trigger_at?: string }) =>
+    http.patch<Reminder>(`/api/reminders/${id}`, data).then(r => r.data),
   remove: (id: number) => http.delete(`/api/reminders/${id}`),
 };

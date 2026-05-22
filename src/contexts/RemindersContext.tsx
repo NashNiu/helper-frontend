@@ -3,6 +3,7 @@ import type { Reminder } from '../api/reminder';
 
 export interface RemindersContextValue {
   scheduleOne: (reminder: Reminder) => void;
+  rescheduleOne: (reminder: Reminder) => void;
 }
 
 export const RemindersContext = createContext<RemindersContextValue | null>(null);

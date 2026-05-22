@@ -19,6 +19,35 @@ export default function TodoPage() {
   const [creating, setCreating] = useState(false);
   const [operatingIds, setOperatingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (todo: Todo) => {
+    setEditingId(todo.id);
+    setDraft(todo.content);
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDraft('');
+  };
+  const saveEdit = async () => {
+    if (editingId === null) return;
+    const content = draft.trim();
+    if (!content) return;
+    setError('');
+    setSavingEdit(true);
+    try {
+      const updated = await todoApi.update(editingId, { content });
+      setTodos(prev => prev.map(t => t.id === editingId ? updated : t));
+      cancelEdit();
+    } catch (err) {
+      setError(getErrorMessage(err, '保存失败，请重试'));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { confirm, dialog } = useConfirm();
 
@@ -154,12 +183,26 @@ export default function TodoPage() {
           <TodoList
             title="待完成" items={pending}
             operatingIds={operatingIds}
+            editingId={editingId}
+            draft={draft}
+            savingEdit={savingEdit}
+            onStartEdit={startEdit}
+            onCancelEdit={cancelEdit}
+            onSaveEdit={saveEdit}
+            onDraftChange={setDraft}
             onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
           />
           {done.length > 0 && (
             <TodoList
               title="已完成" items={done}
               operatingIds={operatingIds}
+              editingId={editingId}
+              draft={draft}
+              savingEdit={savingEdit}
+              onStartEdit={startEdit}
+              onCancelEdit={cancelEdit}
+              onSaveEdit={saveEdit}
+              onDraftChange={setDraft}
               onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
             />
           )}
@@ -173,9 +216,21 @@ export default function TodoPage() {
   );
 }
 
-function TodoList({ title, items, operatingIds, onToggle, onDelete, onDeleteImage }: {
+function TodoList({
+  title, items, operatingIds,
+  editingId, draft, savingEdit,
+  onStartEdit, onCancelEdit, onSaveEdit, onDraftChange,
+  onToggle, onDelete, onDeleteImage,
+}: {
   title: string; items: Todo[];
   operatingIds: Set<number>;
+  editingId: number | null;
+  draft: string;
+  savingEdit: boolean;
+  onStartEdit: (t: Todo) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: () => void;
+  onDraftChange: (v: string) => void;
   onToggle: (t: Todo) => void; onDelete: (id: number) => void;
   onDeleteImage: (todoId: number, imageId: number) => void;
 }) {
@@ -187,6 +242,7 @@ function TodoList({ title, items, operatingIds, onToggle, onDelete, onDeleteImag
       <div className="space-y-2">
         {items.map(todo => {
           const busy = operatingIds.has(todo.id);
+          const isEditing = editingId === todo.id;
           return (
             <Card key={todo.id} className={todo.is_done ? 'bg-muted/40' : undefined}>
               <CardContent className="pt-4">
@@ -198,23 +254,69 @@ function TodoList({ title, items, operatingIds, onToggle, onDelete, onDeleteImag
                       <Checkbox
                         checked={todo.is_done}
                         onCheckedChange={() => onToggle(todo)}
+                        disabled={isEditing}
                         aria-label={`标记 ${todo.content} 为${todo.is_done ? '未完成' : '已完成'}`}
                       />
                     )}
                   </div>
-                  <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}>
-                    {todo.content}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => onDelete(todo.id)}
-                    disabled={busy}
-                    aria-label="删除待办"
-                  >
-                    {busy ? <Spinner className="h-4 w-4" /> : '删除'}
-                  </Button>
+                  {isEditing ? (
+                    <Input
+                      value={draft}
+                      onChange={e => onDraftChange(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !savingEdit) onSaveEdit();
+                        if (e.key === 'Escape') onCancelEdit();
+                      }}
+                      autoFocus
+                      className="flex-1"
+                    />
+                  ) : (
+                    <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}>
+                      {todo.content}
+                    </span>
+                  )}
+                  {isEditing ? (
+                    <>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={onSaveEdit}
+                        disabled={savingEdit || !draft.trim()}
+                      >
+                        {savingEdit ? <Spinner className="h-4 w-4" /> : '保存'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onCancelEdit}
+                        disabled={savingEdit}
+                      >
+                        取消
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onStartEdit(todo)}
+                        disabled={busy || editingId !== null}
+                        aria-label="编辑待办"
+                      >
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => onDelete(todo.id)}
+                        disabled={busy || editingId !== null}
+                        aria-label="删除待办"
+                      >
+                        {busy ? <Spinner className="h-4 w-4" /> : '删除'}
+                      </Button>
+                    </>
+                  )}
                 </div>
                 <ImageGallery images={todo.images} onDelete={imageId => onDeleteImage(todo.id, imageId)} />
               </CardContent>
