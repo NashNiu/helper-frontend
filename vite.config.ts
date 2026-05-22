@@ -59,8 +59,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        // target: "http://localhost:3001",
-        target: "https://helper-backend-production-6abe.up.railway.app/",
+        target: "http://localhost:3001",
+        // target: "https://helper-backend-production-6abe.up.railway.app/",
         changeOrigin: true,
       },
       "/uploads": {
