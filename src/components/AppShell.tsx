@@ -4,6 +4,7 @@ import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../contexts/useAuth';
+import { useWindowControlsOverlay } from '../hooks/useWindowControlsOverlay';
 import NotificationBanner from './NotificationBanner';
 import TimerWidget from './TimerWidget';
 import RemindersProvider from '../contexts/RemindersProvider';
@@ -26,6 +27,7 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { controlsWidth } = useWindowControlsOverlay();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -42,15 +44,15 @@ export default function AppShell() {
     <RemindersProvider>
       <ActiveTimerProvider>
         <div className="h-screen flex flex-col bg-background text-foreground">
-          <nav className="flex-shrink-0 bg-background border-b">
+          <nav className="flex-shrink-0 bg-background border-b wco-drag">
             <div className="max-w-3xl mx-auto h-12 flex items-center">
               <NavLink
                 to="/"
-                className="flex-shrink-0 font-semibold text-sm text-foreground tracking-tight px-4 whitespace-nowrap"
+                className="flex-shrink-0 font-semibold text-sm text-foreground tracking-tight px-4 whitespace-nowrap wco-no-drag"
               >
                 助手
               </NavLink>
-              <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex-1 min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden wco-no-drag">
                 <div className="flex items-center gap-1 px-1">
                   {navItems.map(({ to, label }) => (
                     <NavLink
@@ -58,7 +60,7 @@ export default function AppShell() {
                       to={to}
                       end={to === '/'}
                       className={({ isActive }) =>
-                        `px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                        `px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors wco-no-drag ${
                           isActive
                             ? 'text-foreground bg-muted'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -70,12 +72,16 @@ export default function AppShell() {
                   ))}
                 </div>
               </div>
-              <div className="flex-shrink-0 flex items-center gap-1 px-2">
+              <div
+                className="flex-shrink-0 flex items-center gap-1 px-2 wco-no-drag"
+                style={controlsWidth > 0 ? { paddingRight: controlsWidth } : undefined}
+              >
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleTheme}
                   aria-label="切换主题"
+                  className="wco-no-drag"
                 >
                   {theme === 'dark' ? (
                     <SunIcon className="w-5 h-5" />
@@ -83,21 +89,21 @@ export default function AppShell() {
                     <MoonIcon className="w-5 h-5" />
                   )}
                 </Button>
-                <div className="relative" ref={menuRef}>
+                <div className="relative wco-no-drag" ref={menuRef}>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setMenuOpen((v) => !v)}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
-                    className="rounded-full px-2.5 h-8"
+                    className="rounded-full px-2.5 h-8 wco-no-drag"
                   >
                     <span className="text-xs">
                       {user?.username ?? '未登录'}
                     </span>
                   </Button>
                   {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-popover shadow-md py-1 z-50">
+                    <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-popover shadow-md py-1 z-50 wco-no-drag">
                       <div className="px-3 py-1.5">
                         <div className="text-sm font-medium truncate">
                           {user?.username}
@@ -109,7 +115,7 @@ export default function AppShell() {
                       <div className="h-px bg-border my-1" />
                       <button
                         type="button"
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted wco-no-drag"
                         onClick={() => {
                           setMenuOpen(false);
                           logout();
