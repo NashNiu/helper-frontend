@@ -121,3 +121,13 @@
 .dark * {
   scrollbar-color: oklch(1 0 0 / 0.12) transparent;
 }
+
+/* Window Controls Overlay */
+.wco-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.wco-no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
