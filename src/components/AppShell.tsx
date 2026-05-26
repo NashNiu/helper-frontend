@@ -30,6 +30,11 @@ export default function AppShell() {
   const { controlsWidth } = useWindowControlsOverlay();
 
   useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (meta) meta.content = theme === 'dark' ? '#1e1e1e' : '#ffffff';
+  }, [theme]);
+
+  useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
