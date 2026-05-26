@@ -16,7 +16,7 @@ export default defineConfig({
         name: "助手",
         short_name: "助手",
         description: "一句话搞定提醒、计时、待办和记账",
-        theme_color: "#111111",
+        theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
         display_override: ["window-controls-overlay", "standalone"],
