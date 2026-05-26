@@ -16,7 +16,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (status === "initializing") {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center gap-4">
         {/* 旋转光环 */}
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 rounded-full border-4 border-muted" />
