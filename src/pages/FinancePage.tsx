@@ -284,262 +284,268 @@ export default function FinancePage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold text-foreground">收支记录</h1>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {newCatToast && (
-          <p className="text-amber-600 text-sm bg-amber-50 rounded px-3 py-2">
-            {newCatToast}
-          </p>
-        )}
+      <div className="h-full flex flex-col gap-6">
+        {/* fixed: title + input + filters */}
+        <div className="flex-shrink-0 space-y-6">
+          <h1 className="text-2xl font-semibold text-foreground">收支记录</h1>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {newCatToast && (
+            <p className="text-amber-600 text-sm bg-amber-50 rounded px-3 py-2">
+              {newCatToast}
+            </p>
+          )}
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && !loading && handleCreate()
-                }
-                placeholder="例：午饭吃了快餐，花了15"
-                className="flex-1"
-              />
-              <Button onClick={handleCreate} disabled={loading}>
-                {loading ? <Spinner className="h-4 w-4 mr-1" /> : null}
-                {loading ? "解析中…" : "记录"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !loading && handleCreate()
+                  }
+                  placeholder="例：午饭吃了快餐，花了15"
+                  className="flex-1"
+                />
+                <Button onClick={handleCreate} disabled={loading}>
+                  {loading ? <Spinner className="h-4 w-4 mr-1" /> : null}
+                  {loading ? "解析中…" : "记录"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2 flex-wrap">
-              {(
-                ["today", "week", "month", "year"] as Exclude<Range, "custom">[]
-              ).map((r) => (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2 flex-wrap">
+                {(
+                  ["today", "week", "month", "year"] as Exclude<Range, "custom">[]
+                ).map((r) => (
+                  <Button
+                    key={r}
+                    variant={range === r ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setRange(r);
+                      setWeekOffset(0);
+                      setMonthOffset(0);
+                      setYearOffset(0);
+                    }}
+                  >
+                    {RANGE_LABELS[r]}
+                  </Button>
+                ))}
                 <Button
-                  key={r}
-                  variant={range === r ? "default" : "outline"}
+                  variant={range === "custom" ? "default" : "outline"}
                   size="sm"
+                  onClick={() => setRange("custom")}
+                >
+                  自定义
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCategoryModal(true)}
+                >
+                  管理分类
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowChart((v) => !v)}
+                >
+                  {showChart ? "隐藏图表" : "查看图表"}
+                </Button>
+              </div>
+            </div>
+
+            {(range === "week" || range === "month" || range === "year") && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
                   onClick={() => {
-                    setRange(r);
-                    setWeekOffset(0);
-                    setMonthOffset(0);
-                    setYearOffset(0);
+                    if (range === "week") setWeekOffset((o) => o - 1);
+                    else if (range === "month") setMonthOffset((o) => o - 1);
+                    else setYearOffset((o) => o - 1);
                   }}
                 >
-                  {RANGE_LABELS[r]}
+                  ←
                 </Button>
-              ))}
-              <Button
-                variant={range === "custom" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setRange("custom")}
-              >
-                自定义
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCategoryModal(true)}
-              >
-                管理分类
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowChart((v) => !v)}
-              >
-                {showChart ? "隐藏图表" : "查看图表"}
-              </Button>
-            </div>
-          </div>
-
-          {(range === "week" || range === "month" || range === "year") && (
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                onClick={() => {
-                  if (range === "week") setWeekOffset((o) => o - 1);
-                  else if (range === "month") setMonthOffset((o) => o - 1);
-                  else setYearOffset((o) => o - 1);
-                }}
-              >
-                ←
-              </Button>
-              <span className="text-xs text-muted-foreground min-w-[90px] text-center select-none">
-                {getPeriodLabel(
-                  range,
-                  range === "week"
-                    ? weekOffset
-                    : range === "month"
-                      ? monthOffset
-                      : yearOffset,
-                )}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                disabled={
-                  (range === "week"
-                    ? weekOffset
-                    : range === "month"
-                      ? monthOffset
-                      : yearOffset) >= 0
-                }
-                onClick={() => {
-                  if (range === "week") setWeekOffset((o) => o + 1);
-                  else if (range === "month") setMonthOffset((o) => o + 1);
-                  else setYearOffset((o) => o + 1);
-                }}
-              >
-                →
-              </Button>
-            </div>
-          )}
-
-          {range === "custom" && (
-            <DateRangePicker
-              from={customFrom}
-              to={customTo}
-              onFromChange={setCustomFrom}
-              onToChange={setCustomTo}
-              onQuery={() => loadCurrentRange("custom", customFrom, customTo)}
-            />
-          )}
-        </div>
-
-        {showChart && (
-          <FinanceCharts
-            records={records}
-            onCategorySelect={setFilterCategory}
-            onDayClick={(isoDay) => {
-              setRange("custom");
-              setCustomFrom(isoDay);
-              setCustomTo(isoDay);
-              doLoad(
-                dayjs(isoDay).startOf("day").valueOf(),
-                dayjs(isoDay).endOf("day").valueOf(),
-              );
-            }}
-          />
-        )}
-
-        {listLoading ? (
-          <div className="flex justify-center py-10">
-            <Spinner className="text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filterCategory && (
-              <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
-                <span>筛选：{filterCategory}</span>
-                <button
-                  className="ml-auto text-indigo-400 hover:text-indigo-600"
-                  onClick={() => setFilterCategory(null)}
+                <span className="text-xs text-muted-foreground min-w-[90px] text-center select-none">
+                  {getPeriodLabel(
+                    range,
+                    range === "week"
+                      ? weekOffset
+                      : range === "month"
+                        ? monthOffset
+                        : yearOffset,
+                  )}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  disabled={
+                    (range === "week"
+                      ? weekOffset
+                      : range === "month"
+                        ? monthOffset
+                        : yearOffset) >= 0
+                  }
+                  onClick={() => {
+                    if (range === "week") setWeekOffset((o) => o + 1);
+                    else if (range === "month") setMonthOffset((o) => o + 1);
+                    else setYearOffset((o) => o + 1);
+                  }}
                 >
-                  ✕
-                </button>
+                  →
+                </Button>
               </div>
             )}
-            {(filterCategory
-              ? records.filter((r) => getPrimaryName(r) === filterCategory)
-              : records
-            ).map((r) => {
-              const primary = getPrimaryName(r);
-              const sub = getSubName(r);
-              return (
-                <Card
-                  key={r.id}
-                  className={
-                    r.amount > 0
-                      ? "border-l-[3px] border-l-emerald-500"
-                      : "border-l-[3px] border-l-red-400"
-                  }
-                >
-                  <CardContent className="p-4 flex items-center gap-3 py-1">
-                    <div className="flex-1 min-w-0 gap-1 flex flex-col">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`text-base font-semibold ${
-                            r.amount > 0
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-red-500 dark:text-red-400"
-                          }`}
-                        >
-                          {r.amount > 0 ? "+" : ""}¥
-                          {Math.abs(r.amount).toFixed(2)}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs font-normal"
-                        >
-                          {primary}
-                        </Badge>
-                        {sub && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs font-normal"
-                          >
-                            {sub}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {r.note || r.raw_input}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {dayjs(r.happened_at).format("YYYY/MM/DD HH:mm")}
-                      </span>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => setEditing(r)}
-                          disabled={deletingIds.has(r.id)}
-                          aria-label="编辑记录"
-                        >
-                          编辑
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          onClick={() => handleDelete(r.id)}
-                          disabled={deletingIds.has(r.id)}
-                          aria-label="删除记录"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          {deletingIds.has(r.id) ? (
-                            <Spinner className="h-4 w-4" />
-                          ) : (
-                            "删除"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            {(filterCategory
-              ? records.filter((r) => getPrimaryName(r) === filterCategory)
-              : records
-            ).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                暂无记录
-              </p>
+
+            {range === "custom" && (
+              <DateRangePicker
+                from={customFrom}
+                to={customTo}
+                onFromChange={setCustomFrom}
+                onToChange={setCustomTo}
+                onQuery={() => loadCurrentRange("custom", customFrom, customTo)}
+              />
             )}
           </div>
-        )}
+        </div>
+
+        {/* scrollable: chart + list */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
+          {showChart && (
+            <FinanceCharts
+              records={records}
+              onCategorySelect={setFilterCategory}
+              onDayClick={(isoDay) => {
+                setRange("custom");
+                setCustomFrom(isoDay);
+                setCustomTo(isoDay);
+                doLoad(
+                  dayjs(isoDay).startOf("day").valueOf(),
+                  dayjs(isoDay).endOf("day").valueOf(),
+                );
+              }}
+            />
+          )}
+
+          {listLoading ? (
+            <div className="flex justify-center py-10">
+              <Spinner className="text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filterCategory && (
+                <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 rounded-lg px-3 py-2">
+                  <span>筛选：{filterCategory}</span>
+                  <button
+                    className="ml-auto text-indigo-400 hover:text-indigo-600"
+                    onClick={() => setFilterCategory(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+              {(filterCategory
+                ? records.filter((r) => getPrimaryName(r) === filterCategory)
+                : records
+              ).map((r) => {
+                const primary = getPrimaryName(r);
+                const sub = getSubName(r);
+                return (
+                  <Card
+                    key={r.id}
+                    className={
+                      r.amount > 0
+                        ? "border-l-[3px] border-l-emerald-500"
+                        : "border-l-[3px] border-l-red-400"
+                    }
+                  >
+                    <CardContent className="p-4 flex items-center gap-3 py-1">
+                      <div className="flex-1 min-w-0 gap-1 flex flex-col">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-base font-semibold ${
+                              r.amount > 0
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-red-500 dark:text-red-400"
+                            }`}
+                          >
+                            {r.amount > 0 ? "+" : ""}¥
+                            {Math.abs(r.amount).toFixed(2)}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="text-xs font-normal"
+                          >
+                            {primary}
+                          </Badge>
+                          {sub && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs font-normal"
+                            >
+                              {sub}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {r.note || r.raw_input}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {dayjs(r.happened_at).format("YYYY/MM/DD HH:mm")}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => setEditing(r)}
+                            disabled={deletingIds.has(r.id)}
+                            aria-label="编辑记录"
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deletingIds.has(r.id)}
+                            aria-label="删除记录"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            {deletingIds.has(r.id) ? (
+                              <Spinner className="h-4 w-4" />
+                            ) : (
+                              "删除"
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              {(filterCategory
+                ? records.filter((r) => getPrimaryName(r) === filterCategory)
+                : records
+              ).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  暂无记录
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <CategoryModal
