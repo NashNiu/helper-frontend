@@ -121,80 +121,70 @@ export default function TodoPage() {
   const done = todos.filter(t => t.is_done);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground">待办事项</h1>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+    <div className="h-full flex flex-col gap-6">
+      <div className="flex-shrink-0 space-y-6">
+        <h1 className="text-2xl font-semibold text-foreground">待办事项</h1>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <Card>
-        <CardContent className="pt-4 space-y-3">
-          <div className="flex gap-2">
-            <Input
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
-              placeholder="添加待办..."
-              className="flex-1"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="上传图片"
-              className="relative"
-            >
-              <PhotoIcon className="w-4 h-4" />
-              {pendingFiles.length > 0 && (
-                <span className="absolute -top-1 -right-1 text-[10px] bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                  {pendingFiles.length}
-                </span>
-              )}
-            </Button>
-            <Button onClick={handleCreate} disabled={creating} variant="default">
-              {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
-              {creating ? '添加中…' : '添加'}
-            </Button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={e => setPendingFiles(Array.from(e.target.files ?? []))}
-          />
-          {pendingFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {pendingFiles.map((f, i) => (
-                <div key={i} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                  {f.name}
-                </div>
-              ))}
+        <Card>
+          <CardContent className="pt-4 space-y-3">
+            <div className="flex gap-2">
+              <Input
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
+                placeholder="添加待办..."
+                className="flex-1"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="上传图片"
+                className="relative"
+              >
+                <PhotoIcon className="w-4 h-4" />
+                {pendingFiles.length > 0 && (
+                  <span className="absolute -top-1 -right-1 text-[10px] bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                    {pendingFiles.length}
+                  </span>
+                )}
+              </Button>
+              <Button onClick={handleCreate} disabled={creating} variant="default">
+                {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
+                {creating ? '添加中…' : '添加'}
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={e => setPendingFiles(Array.from(e.target.files ?? []))}
+            />
+            {pendingFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingFiles.map((f, i) => (
+                  <div key={i} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
+                    {f.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-      {fetchLoading ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="text-muted-foreground" />
-        </div>
-      ) : (
-        <>
-          <TodoList
-            title="待完成" items={pending}
-            operatingIds={operatingIds}
-            editingId={editingId}
-            draft={draft}
-            savingEdit={savingEdit}
-            onStartEdit={startEdit}
-            onCancelEdit={cancelEdit}
-            onSaveEdit={saveEdit}
-            onDraftChange={setDraft}
-            onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
-          />
-          {done.length > 0 && (
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
+        {fetchLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner className="text-muted-foreground" />
+          </div>
+        ) : (
+          <>
             <TodoList
-              title="已完成" items={done}
+              title="待完成" items={pending}
               operatingIds={operatingIds}
               editingId={editingId}
               draft={draft}
@@ -205,12 +195,26 @@ export default function TodoPage() {
               onDraftChange={setDraft}
               onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
             />
-          )}
-          {pending.length === 0 && done.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">暂无待办</p>
-          )}
-        </>
-      )}
+            {done.length > 0 && (
+              <TodoList
+                title="已完成" items={done}
+                operatingIds={operatingIds}
+                editingId={editingId}
+                draft={draft}
+                savingEdit={savingEdit}
+                onStartEdit={startEdit}
+                onCancelEdit={cancelEdit}
+                onSaveEdit={saveEdit}
+                onDraftChange={setDraft}
+                onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
+              />
+            )}
+            {pending.length === 0 && done.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">暂无待办</p>
+            )}
+          </>
+        )}
+      </div>
       {dialog}
     </div>
   );

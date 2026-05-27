@@ -77,28 +77,31 @@ export default function ReminderPage() {
   const triggered = reminders.filter(r => r.is_triggered);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-foreground">定时提醒</h1>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+    <div className="h-full flex flex-col gap-6">
+      <div className="flex-shrink-0 space-y-6">
+        <h1 className="text-2xl font-semibold text-foreground">定时提醒</h1>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
-              placeholder="例：30分钟后提醒我提交日志"
-              className="flex-1"
-            />
-            <Button onClick={handleCreate} disabled={creating} variant="default">
-              {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
-              {creating ? '解析中…' : '添加'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
+                placeholder="例：30分钟后提醒我提交日志"
+                className="flex-1"
+              />
+              <Button onClick={handleCreate} disabled={creating} variant="default">
+                {creating ? <Spinner className="h-4 w-4 mr-1" /> : null}
+                {creating ? '解析中…' : '添加'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
       {fetchLoading ? (
         <div className="flex justify-center py-10">
           <Spinner className="text-muted-foreground" />
@@ -181,6 +184,7 @@ export default function ReminderPage() {
           )}
         </>
       )}
+      </div>
       <EditReminderModal
         key={editing?.id ?? 'none'}
         reminder={editing}
