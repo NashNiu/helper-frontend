@@ -103,19 +103,13 @@ export default function AppShell() {
                     aria-expanded={menuOpen}
                     className="rounded-full px-2.5 h-8 wco-no-drag"
                   >
-                    <span className="text-xs">
-                      {user?.username ?? '未登录'}
-                    </span>
+                    <span className="text-xs">{user?.username ?? '未登录'}</span>
                   </Button>
                   {menuOpen && (
                     <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-popover shadow-md py-1 z-50 wco-no-drag">
                       <div className="px-3 py-1.5">
-                        <div className="text-sm font-medium truncate">
-                          {user?.username}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {user?.email}
-                        </div>
+                        <div className="text-sm font-medium truncate">{user?.username}</div>
+                        <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
                       </div>
                       <div className="h-px bg-border my-1" />
                       <button

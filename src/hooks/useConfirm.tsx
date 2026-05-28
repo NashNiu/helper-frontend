@@ -2,14 +2,22 @@ import { useState, useCallback } from 'react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export function useConfirm() {
-  const [pending, setPending] = useState<{ message: string; resolve: (v: boolean) => void } | null>(null);
+  const [pending, setPending] = useState<{ message: string; resolve: (v: boolean) => void } | null>(
+    null
+  );
 
   const confirm = useCallback((message: string): Promise<boolean> => {
-    return new Promise(resolve => setPending({ message, resolve }));
+    return new Promise((resolve) => setPending({ message, resolve }));
   }, []);
 
-  const handleConfirm = () => { pending?.resolve(true); setPending(null); };
-  const handleCancel = () => { pending?.resolve(false); setPending(null); };
+  const handleConfirm = () => {
+    pending?.resolve(true);
+    setPending(null);
+  };
+  const handleCancel = () => {
+    pending?.resolve(false);
+    setPending(null);
+  };
 
   const dialog = (
     <ConfirmDialog

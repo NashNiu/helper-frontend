@@ -15,21 +15,13 @@ export interface LoginResult {
 
 export const authApi = {
   sendVerificationCode: (email: string) =>
-    http
-      .post('/api/auth/send-verification-code', { email })
-      .then(() => undefined),
+    http.post('/api/auth/send-verification-code', { email }).then(() => undefined),
 
-  register: (data: {
-    username: string;
-    email: string;
-    password: string;
-    code: string;
-  }) => http.post<LoginResult>('/api/auth/register', data).then((r) => r.data),
+  register: (data: { username: string; email: string; password: string; code: string }) =>
+    http.post<LoginResult>('/api/auth/register', data).then((r) => r.data),
 
   login: (identifier: string, password: string) =>
-    http
-      .post<LoginResult>('/api/auth/login', { identifier, password })
-      .then((r) => r.data),
+    http.post<LoginResult>('/api/auth/login', { identifier, password }).then((r) => r.data),
 
   me: () => http.get<AuthUser>('/api/auth/me').then((r) => r.data),
 
@@ -37,7 +29,5 @@ export const authApi = {
     http.post('/api/auth/forgot-password', { email }).then(() => undefined),
 
   resetPassword: (token: string, password: string) =>
-    http
-      .post('/api/auth/reset-password', { token, password })
-      .then(() => undefined),
+    http.post('/api/auth/reset-password', { token, password }).then(() => undefined),
 };

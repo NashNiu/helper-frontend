@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import dayjs from "dayjs";
+import { useState, useEffect } from 'react';
+import dayjs from 'dayjs';
 import {
   BarChart,
   Bar,
@@ -11,19 +11,19 @@ import {
   PieChart,
   Pie,
   ResponsiveContainer,
-} from "recharts";
-import type { FinanceRecord } from "../api/finance";
+} from 'recharts';
+import type { FinanceRecord } from '../api/finance';
 
 const PIE_COLORS = [
-  "#6366f1",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-  "#3b82f6",
-  "#8b5cf6",
-  "#06b6d4",
-  "#84cc16",
-  "#f97316",
+  '#6366f1',
+  '#f59e0b',
+  '#10b981',
+  '#ef4444',
+  '#3b82f6',
+  '#8b5cf6',
+  '#06b6d4',
+  '#84cc16',
+  '#f97316',
 ];
 
 interface Props {
@@ -37,40 +37,34 @@ function getPrimaryName(r: FinanceRecord): string {
 }
 
 function getSubName(r: FinanceRecord): string {
-  if (!r.category_rel) return "未分类";
-  return r.category_rel.parent ? r.category_rel.name : "(主分类直接)";
+  if (!r.category_rel) return '未分类';
+  return r.category_rel.parent ? r.category_rel.name : '(主分类直接)';
 }
 
 export default function FinanceCharts({ records, onDayClick, onCategorySelect }: Props) {
   const [drillCategory, setDrillCategory] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(
-    () => document.documentElement.classList.contains("dark"),
-  );
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
 
   useEffect(() => {
     const el = document.documentElement;
-    const obs = new MutationObserver(() =>
-      setIsDark(el.classList.contains("dark")),
-    );
-    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    const obs = new MutationObserver(() => setIsDark(el.classList.contains('dark')));
+    obs.observe(el, { attributes: true, attributeFilter: ['class'] });
     return () => obs.disconnect();
   }, []);
 
-  const tickColor = isDark ? "#9ca3af" : "#6b7280";
-  const gridColor = isDark ? "#374151" : "#e5e7eb";
+  const tickColor = isDark ? '#9ca3af' : '#6b7280';
+  const gridColor = isDark ? '#374151' : '#e5e7eb';
   const tooltipStyle = {
-    backgroundColor: isDark ? "#1f2937" : "#ffffff",
-    borderColor: isDark ? "#374151" : "#e5e7eb",
-    color: isDark ? "#f9fafb" : "#111827",
+    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+    borderColor: isDark ? '#374151' : '#e5e7eb',
+    color: isDark ? '#f9fafb' : '#111827',
   };
 
   if (records.length === 0)
     return <p className="text-sm text-muted-foreground text-center py-8">暂无数据</p>;
 
-  const byDay = records.reduce<
-    Record<string, { income: number; expense: number }>
-  >((acc, r) => {
-    const key = dayjs(r.happened_at).format("YYYY-MM-DD");
+  const byDay = records.reduce<Record<string, { income: number; expense: number }>>((acc, r) => {
+    const key = dayjs(r.happened_at).format('YYYY-MM-DD');
     if (!acc[key]) acc[key] = { income: 0, expense: 0 };
     if (r.amount > 0) acc[key].income += r.amount;
     else acc[key].expense += Math.abs(r.amount);
@@ -93,8 +87,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
     return acc;
   }, {});
 
-  const activeDrill =
-    drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
+  const activeDrill = drillCategory && topLevelAgg[drillCategory] ? drillCategory : null;
 
   const pieAggregation = activeDrill
     ? expenses
@@ -112,9 +105,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
     fill: PIE_COLORS[i % PIE_COLORS.length],
   }));
 
-  const totalIncome = records
-    .filter((r) => r.amount > 0)
-    .reduce((s, r) => s + r.amount, 0);
+  const totalIncome = records.filter((r) => r.amount > 0).reduce((s, r) => s + r.amount, 0);
   const totalExpense = expenses.reduce((s, r) => s + Math.abs(r.amount), 0);
 
   return (
@@ -148,16 +139,24 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
               name="收入"
               fill="#10b981"
               radius={[4, 4, 0, 0]}
-              style={onDayClick ? { cursor: "pointer" } : undefined}
-              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
+              style={onDayClick ? { cursor: 'pointer' } : undefined}
+              onClick={
+                onDayClick
+                  ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay)
+                  : undefined
+              }
             />
             <Bar
               dataKey="expense"
               name="支出"
               fill="#ef4444"
               radius={[4, 4, 0, 0]}
-              style={onDayClick ? { cursor: "pointer" } : undefined}
-              onClick={onDayClick ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay) : undefined}
+              style={onDayClick ? { cursor: 'pointer' } : undefined}
+              onClick={
+                onDayClick
+                  ? (entry: unknown) => onDayClick((entry as { isoDay: string }).isoDay)
+                  : undefined
+              }
             />
           </BarChart>
         </ResponsiveContainer>
@@ -168,9 +167,12 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
           <div className="flex items-center gap-1 text-sm text-card-foreground mb-3">
             <button
               className={
-                activeDrill ? "underline text-indigo-500 dark:text-indigo-400" : "font-medium"
+                activeDrill ? 'underline text-indigo-500 dark:text-indigo-400' : 'font-medium'
               }
-              onClick={() => { setDrillCategory(null); onCategorySelect?.(null); }}
+              onClick={() => {
+                setDrillCategory(null);
+                onCategorySelect?.(null);
+              }}
             >
               支出分布
             </button>
@@ -202,23 +204,23 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
                         }
                       }
                 }
-                style={{ cursor: activeDrill ? "default" : "pointer" }}
+                style={{ cursor: activeDrill ? 'default' : 'pointer' }}
                 label={(props: {
                   name?: string;
                   percent?: number;
                   x?: number;
                   y?: number;
-                  textAnchor?: "end" | "inherit" | "middle" | "start";
+                  textAnchor?: 'end' | 'inherit' | 'middle' | 'start';
                 }) => (
                   <text
                     x={props.x}
                     y={props.y}
                     fill={tickColor}
-                    textAnchor={props.textAnchor ?? "middle"}
+                    textAnchor={props.textAnchor ?? 'middle'}
                     dominantBaseline="central"
                     fontSize={12}
                   >
-                    {`${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
+                    {`${props.name ?? ''} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
                   </text>
                 )}
               />
@@ -226,9 +228,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
           </ResponsiveContainer>
 
           {!activeDrill && (
-            <p className="text-xs text-muted-foreground text-center mt-1">
-              点击扇形查看子分类明细
-            </p>
+            <p className="text-xs text-muted-foreground text-center mt-1">点击扇形查看子分类明细</p>
           )}
         </div>
       )}

@@ -103,14 +103,10 @@ export default function RegisterPage() {
         setSubmitting(false);
       }
     },
-    [username, email, code, password, confirm, submitting, register, navigate],
+    [username, email, code, password, confirm, submitting, register, navigate]
   );
 
-  const sendBtnLabel = codeSending
-    ? 'Sending...'
-    : cooldown > 0
-      ? `${cooldown}s`
-      : 'Send code';
+  const sendBtnLabel = codeSending ? 'Sending...' : cooldown > 0 ? `${cooldown}s` : 'Send code';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
@@ -118,9 +114,7 @@ export default function RegisterPage() {
         <CardContent className="p-6 space-y-5">
           <div className="text-center space-y-1">
             <h1 className="text-xl font-semibold">Create account</h1>
-            <p className="text-sm text-muted-foreground">
-              Register to start tracking your day
-            </p>
+            <p className="text-sm text-muted-foreground">Register to start tracking your day</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -158,25 +152,19 @@ export default function RegisterPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                Verification code (6 digits)
-              </label>
+              <label className="text-xs text-muted-foreground">Verification code (6 digits)</label>
               <Input
                 type="text"
                 inputMode="numeric"
                 pattern="\d{6}"
                 maxLength={6}
                 value={code}
-                onChange={(e) =>
-                  setCode(e.target.value.replace(/\D/g, '').slice(0, 6))
-                }
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 autoComplete="one-time-code"
                 disabled={submitting}
               />
               {codeMsg && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                  {codeMsg}
-                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">{codeMsg}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -190,9 +178,7 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                Confirm password
-              </label>
+              <label className="text-xs text-muted-foreground">Confirm password</label>
               <Input
                 type="password"
                 value={confirm}

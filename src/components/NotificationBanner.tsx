@@ -9,20 +9,32 @@ const DISMISS_KEY = 'notify-banner-dismissed';
 export default function NotificationBanner() {
   const [permission, setPermission] = useState<NotifyPermission>(() => getNotificationPermission());
   const [dismissed, setDismissed] = useState<boolean>(() => {
-    try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
+    try {
+      return localStorage.getItem(DISMISS_KEY) === '1';
+    } catch {
+      return false;
+    }
   });
 
   const handleEnable = useCallback(async () => {
     const result = await requestNotificationPermission();
     setPermission(result);
     if (result !== 'default') {
-      try { localStorage.removeItem(DISMISS_KEY); } catch { /* ignore */ }
+      try {
+        localStorage.removeItem(DISMISS_KEY);
+      } catch {
+        /* ignore */
+      }
     }
   }, []);
 
   const handleDismiss = useCallback(() => {
     setDismissed(true);
-    try { localStorage.setItem(DISMISS_KEY, '1'); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(DISMISS_KEY, '1');
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   if (permission !== 'default' || dismissed) return null;
@@ -33,10 +45,19 @@ export default function NotificationBanner() {
       <p className="flex-1 text-amber-800 dark:text-amber-200">
         开启系统通知后，即使你切到别的标签页或最小化浏览器，也能在到点时收到提醒。
       </p>
-      <Button size="sm" onClick={handleEnable} className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white border-0">
+      <Button
+        size="sm"
+        onClick={handleEnable}
+        className="bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white border-0"
+      >
         开启
       </Button>
-      <Button variant="ghost" size="sm" onClick={handleDismiss} className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDismiss}
+        className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+      >
         稍后
       </Button>
     </div>

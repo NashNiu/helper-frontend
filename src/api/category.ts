@@ -13,8 +13,7 @@ export interface CategoryTree extends Omit<Category, 'parent_id'> {
 }
 
 export const categoryApi = {
-  getAll: () =>
-    http.get<CategoryTree[]>('/api/categories').then((r) => r.data),
+  getAll: () => http.get<CategoryTree[]>('/api/categories').then((r) => r.data),
   create: (name: string, parent_id?: number) =>
     http.post<Category>('/api/categories', { name, parent_id }).then((r) => r.data),
   rename: (id: number, name: string) =>

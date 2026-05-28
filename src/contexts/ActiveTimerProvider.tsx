@@ -40,11 +40,23 @@ function loadPersisted(): ActiveTimerState | null {
       if (remaining <= 0) {
         return { timer, remaining: 0, status: 'done', formatted: formatRemaining(0), pomodoro };
       }
-      return { timer, remaining, status: 'running', formatted: formatRemaining(remaining), pomodoro };
+      return {
+        timer,
+        remaining,
+        status: 'running',
+        formatted: formatRemaining(remaining),
+        pomodoro,
+      };
     }
     if (p.status === 'paused' && typeof p.pausedRemaining === 'number') {
       const remaining = Math.max(0, Math.floor(p.pausedRemaining));
-      return { timer, remaining, status: 'paused', formatted: formatRemaining(remaining), pomodoro };
+      return {
+        timer,
+        remaining,
+        status: 'paused',
+        formatted: formatRemaining(remaining),
+        pomodoro,
+      };
     }
     return null;
   } catch {
@@ -136,11 +148,16 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
       const endsAt = endsAtRef.current;
       if (endsAt === null) return;
       const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-      setActive(prev => {
+      setActive((prev) => {
         if (!prev) return prev;
         if (remaining <= 0) {
           clearInterval$();
-          const done: ActiveTimerState = { ...prev, remaining: 0, status: 'done', formatted: formatRemaining(0) };
+          const done: ActiveTimerState = {
+            ...prev,
+            remaining: 0,
+            status: 'done',
+            formatted: formatRemaining(0),
+          };
           persist(done);
           // Pomodoro transitions are handled by the useEffect below
           if (!prev.pomodoro) fireDone(done);
@@ -182,7 +199,13 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
       });
     }
     beep();
-  }, [active?.status, active?.pomodoro?.phase, active?.pomodoro?.currentCycle, active?.pomodoro?.totalCycles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    active?.status,
+    active?.pomodoro?.phase,
+    active?.pomodoro?.currentCycle,
+    active?.pomodoro?.totalCycles,
+  ]);
 
   useEffect(() => {
     if (active?.status === 'running') {
@@ -191,55 +214,63 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     } else if (active?.status === 'done' && !active.pomodoro) {
       fireDone(active);
     }
-    return () => { clearInterval$(); };
+    return () => {
+      clearInterval$();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const start = useCallback((timer: Timer) => {
-    clearInterval$();
-    notifiedIdRef.current = null;
-    pomodoroTransitionKeyRef.current = null;
-    persistNotifiedId(null);
-    const remaining = timer.duration_seconds;
-    endsAtRef.current = Date.now() + remaining * 1000;
-    const state: ActiveTimerState = {
-      timer,
-      remaining,
-      status: 'running',
-      formatted: formatRemaining(remaining),
-    };
-    persist(state);
-    setActive(state);
-    startTicking();
-  }, [clearInterval$, startTicking]);
+  const start = useCallback(
+    (timer: Timer) => {
+      clearInterval$();
+      notifiedIdRef.current = null;
+      pomodoroTransitionKeyRef.current = null;
+      persistNotifiedId(null);
+      const remaining = timer.duration_seconds;
+      endsAtRef.current = Date.now() + remaining * 1000;
+      const state: ActiveTimerState = {
+        timer,
+        remaining,
+        status: 'running',
+        formatted: formatRemaining(remaining),
+      };
+      persist(state);
+      setActive(state);
+      startTicking();
+    },
+    [clearInterval$, startTicking]
+  );
 
-  const startPomodoro = useCallback((workTimer: Timer, breakTimer: Timer, cycles: number) => {
-    clearInterval$();
-    notifiedIdRef.current = null;
-    pomodoroTransitionKeyRef.current = null;
-    persistNotifiedId(null);
-    const remaining = workTimer.duration_seconds;
-    endsAtRef.current = Date.now() + remaining * 1000;
-    const state: ActiveTimerState = {
-      timer: workTimer,
-      remaining,
-      status: 'running',
-      formatted: formatRemaining(remaining),
-      pomodoro: {
-        totalCycles: cycles,
-        currentCycle: 1,
-        phase: 'work',
-        workTimer,
-        breakTimer,
-      },
-    };
-    persist(state);
-    setActive(state);
-    startTicking();
-  }, [clearInterval$, startTicking]);
+  const startPomodoro = useCallback(
+    (workTimer: Timer, breakTimer: Timer, cycles: number) => {
+      clearInterval$();
+      notifiedIdRef.current = null;
+      pomodoroTransitionKeyRef.current = null;
+      persistNotifiedId(null);
+      const remaining = workTimer.duration_seconds;
+      endsAtRef.current = Date.now() + remaining * 1000;
+      const state: ActiveTimerState = {
+        timer: workTimer,
+        remaining,
+        status: 'running',
+        formatted: formatRemaining(remaining),
+        pomodoro: {
+          totalCycles: cycles,
+          currentCycle: 1,
+          phase: 'work',
+          workTimer,
+          breakTimer,
+        },
+      };
+      persist(state);
+      setActive(state);
+      startTicking();
+    },
+    [clearInterval$, startTicking]
+  );
 
   const pause = useCallback(() => {
-    setActive(prev => {
+    setActive((prev) => {
       if (!prev || prev.status !== 'running') return prev;
       clearInterval$();
       endsAtRef.current = null;
@@ -250,7 +281,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   }, [clearInterval$]);
 
   const resume = useCallback(() => {
-    setActive(prev => {
+    setActive((prev) => {
       if (!prev || prev.status !== 'paused') return prev;
       endsAtRef.current = Date.now() + prev.remaining * 1000;
       const running: ActiveTimerState = { ...prev, status: 'running' };
@@ -261,7 +292,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   }, [startTicking]);
 
   const reset = useCallback(() => {
-    setActive(prev => {
+    setActive((prev) => {
       if (!prev) return prev;
       clearInterval$();
       endsAtRef.current = null;
@@ -291,7 +322,7 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   }, [clearInterval$]);
 
   const advancePomodoro = useCallback(() => {
-    setActive(prev => {
+    setActive((prev) => {
       if (!prev || prev.status !== 'done' || !prev.pomodoro) return prev;
       const { pomodoro } = prev;
       pomodoroTransitionKeyRef.current = null;
@@ -327,7 +358,9 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
   }, [startTicking]);
 
   return (
-    <ActiveTimerContext.Provider value={{ active, start, startPomodoro, pause, resume, reset, clear, advancePomodoro }}>
+    <ActiveTimerContext.Provider
+      value={{ active, start, startPomodoro, pause, resume, reset, clear, advancePomodoro }}
+    >
       {children}
     </ActiveTimerContext.Provider>
   );

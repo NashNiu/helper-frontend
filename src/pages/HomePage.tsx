@@ -1,32 +1,32 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useMemo, useRef, useState } from 'react';
+import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import {
   BellAlertIcon,
   ClockIcon,
   ClipboardDocumentCheckIcon,
   BanknotesIcon,
   ChevronRightIcon,
-} from "@heroicons/react/24/outline";
-import { classifyApi } from "../api/classify";
-import type { AssistantType } from "../api/classify";
-import { reminderApi } from "../api/reminder";
-import type { Reminder } from "../api/reminder";
-import { financeApi } from "../api/finance";
-import type { FinanceRecord } from "../api/finance";
-import { todoApi } from "../api/todo";
-import type { Todo } from "../api/todo";
-import { timerApi } from "../api/timer";
-import type { Timer } from "../api/timer";
-import { useRemindersContext } from "../contexts/useRemindersContext";
-import { requestNotificationPermission } from "../utils/notify";
-import { getErrorMessage } from "../api/http";
-import { useResource, invalidate } from "../hooks/useResource";
-import { CACHE_KEYS } from "../api/cacheKeys";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
+} from '@heroicons/react/24/outline';
+import { classifyApi } from '../api/classify';
+import type { AssistantType } from '../api/classify';
+import { reminderApi } from '../api/reminder';
+import type { Reminder } from '../api/reminder';
+import { financeApi } from '../api/finance';
+import type { FinanceRecord } from '../api/finance';
+import { todoApi } from '../api/todo';
+import type { Todo } from '../api/todo';
+import { timerApi } from '../api/timer';
+import type { Timer } from '../api/timer';
+import { useRemindersContext } from '../contexts/useRemindersContext';
+import { requestNotificationPermission } from '../utils/notify';
+import { getErrorMessage } from '../api/http';
+import { useResource, invalidate } from '../hooks/useResource';
+import { CACHE_KEYS } from '../api/cacheKeys';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Spinner } from '@/components/ui/spinner';
 
 const TYPE_META: Record<
   AssistantType,
@@ -38,28 +38,28 @@ const TYPE_META: Record<
   }
 > = {
   reminder: {
-    label: "提醒",
+    label: '提醒',
     Icon: BellAlertIcon,
-    dot: "bg-amber-400",
-    route: "/reminders",
+    dot: 'bg-amber-400',
+    route: '/reminders',
   },
   timer: {
-    label: "计时器",
+    label: '计时器',
     Icon: ClockIcon,
-    dot: "bg-violet-400",
-    route: "/timer",
+    dot: 'bg-violet-400',
+    route: '/timer',
   },
   todo: {
-    label: "待办",
+    label: '待办',
     Icon: ClipboardDocumentCheckIcon,
-    dot: "bg-sky-400",
-    route: "/todo",
+    dot: 'bg-sky-400',
+    route: '/todo',
   },
   finance: {
-    label: "收支",
+    label: '收支',
     Icon: BanknotesIcon,
-    dot: "bg-emerald-400",
-    route: "/finance",
+    dot: 'bg-emerald-400',
+    route: '/finance',
   },
 };
 
@@ -70,11 +70,11 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { label: "10 分钟后提醒", template: "10 分钟后提醒我" },
-  { label: "30 分钟后提醒", template: "30 分钟后提醒我" },
-  { label: "番茄钟 25 分钟", template: "开始 25 分钟番茄钟" },
-  { label: "记一笔", template: "花了  元", caret: 3 },
-  { label: "待办", template: "待办：" },
+  { label: '10 分钟后提醒', template: '10 分钟后提醒我' },
+  { label: '30 分钟后提醒', template: '30 分钟后提醒我' },
+  { label: '番茄钟 25 分钟', template: '开始 25 分钟番茄钟' },
+  { label: '记一笔', template: '花了  元', caret: 3 },
+  { label: '待办', template: '待办：' },
 ];
 
 interface FeedItem {
@@ -89,38 +89,38 @@ function buildFeed(
   reminders: Reminder[],
   todos: Todo[],
   finance: FinanceRecord[],
-  timers: Timer[],
+  timers: Timer[]
 ): FeedItem[] {
   const items: FeedItem[] = [];
 
   reminders.forEach((r) =>
     items.push({
       id: `r-${r.id}`,
-      type: "reminder",
+      type: 'reminder',
       title: r.message,
-      subtitle: `提醒时间：${dayjs(r.trigger_at).format("YYYY/MM/DD HH:mm")}`,
+      subtitle: `提醒时间：${dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}`,
       timestamp: new Date(r.created_at).getTime(),
-    }),
+    })
   );
 
   todos.forEach((t) =>
     items.push({
       id: `t-${t.id}`,
-      type: "todo",
+      type: 'todo',
       title: t.content,
-      subtitle: t.is_done ? "已完成" : "待完成",
+      subtitle: t.is_done ? '已完成' : '待完成',
       timestamp: new Date(t.created_at).getTime(),
-    }),
+    })
   );
 
   finance.forEach((f) =>
     items.push({
       id: `f-${f.id}`,
-      type: "finance",
-      title: `${f.amount > 0 ? "+" : ""}¥${Math.abs(f.amount).toFixed(2)} · ${f.category}`,
+      type: 'finance',
+      title: `${f.amount > 0 ? '+' : ''}¥${Math.abs(f.amount).toFixed(2)} · ${f.category}`,
       subtitle: f.note || f.raw_input,
       timestamp: new Date(f.created_at).getTime(),
-    }),
+    })
   );
 
   timers
@@ -128,11 +128,11 @@ function buildFeed(
     .forEach((t) =>
       items.push({
         id: `m-${t.id}`,
-        type: "timer",
+        type: 'timer',
         title: t.name,
         subtitle: `${Math.round(t.duration_seconds / 60)} 分钟计时器`,
         timestamp: new Date(t.created_at).getTime(),
-      }),
+      })
     );
 
   return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
@@ -141,24 +141,20 @@ function buildFeed(
 export default function HomePage() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
-    kind: "idle" | "ok" | "err";
+    kind: 'idle' | 'ok' | 'err';
     text: string;
-  }>({ kind: "idle", text: "" });
+  }>({ kind: 'idle', text: '' });
   const { scheduleOne } = useRemindersContext();
 
-  const [financeFrom] = useState(() =>
-    dayjs().subtract(30, "day").startOf("day").valueOf(),
-  );
+  const [financeFrom] = useState(() => dayjs().subtract(30, 'day').startOf('day').valueOf());
 
-  const remindersRes = useResource(CACHE_KEYS.reminders, () =>
-    reminderApi.getAll(),
-  );
+  const remindersRes = useResource(CACHE_KEYS.reminders, () => reminderApi.getAll());
   const todosRes = useResource(CACHE_KEYS.todos, () => todoApi.getAll());
   const financeRes = useResource(CACHE_KEYS.finance(financeFrom), () =>
-    financeApi.getAll(financeFrom, dayjs().endOf("day").valueOf()),
+    financeApi.getAll(financeFrom, dayjs().endOf('day').valueOf())
   );
   const timersRes = useResource(CACHE_KEYS.timers, () => timerApi.getAll());
 
@@ -168,9 +164,9 @@ export default function HomePage() {
         remindersRes.data ?? [],
         todosRes.data ?? [],
         financeRes.data ?? [],
-        timersRes.data ?? [],
+        timersRes.data ?? []
       ),
-    [remindersRes.data, todosRes.data, financeRes.data, timersRes.data],
+    [remindersRes.data, todosRes.data, financeRes.data, timersRes.data]
   );
 
   const refreshAll = useCallback(() => {
@@ -196,34 +192,34 @@ export default function HomePage() {
     if (!text || submitting) return;
     requestNotificationPermission().catch(() => {});
     setSubmitting(true);
-    setStatus({ kind: "idle", text: "正在识别…" });
+    setStatus({ kind: 'idle', text: '正在识别…' });
     try {
       const { types } = await classifyApi.classify(text);
       await Promise.all(
         types.map(async (type) => {
-          if (type === "reminder") {
+          if (type === 'reminder') {
             const r = await reminderApi.create(text);
             scheduleOne(r);
             invalidate(CACHE_KEYS.reminders);
-          } else if (type === "finance") {
+          } else if (type === 'finance') {
             await financeApi.create(text);
             invalidate(CACHE_KEYS.finance(financeFrom));
-          } else if (type === "todo") {
+          } else if (type === 'todo') {
             await todoApi.create(text, []);
             invalidate(CACHE_KEYS.todos);
-          } else if (type === "timer") {
+          } else if (type === 'timer') {
             await timerApi.createFromText(text);
             invalidate(CACHE_KEYS.timers);
           }
-        }),
+        })
       );
-      setInput("");
-      const labels = types.map((t) => `「${TYPE_META[t].label}」`).join("");
-      setStatus({ kind: "ok", text: `已添加到${labels}` });
+      setInput('');
+      const labels = types.map((t) => `「${TYPE_META[t].label}」`).join('');
+      setStatus({ kind: 'ok', text: `已添加到${labels}` });
     } catch (err) {
       setStatus({
-        kind: "err",
-        text: getErrorMessage(err, "处理失败，请重试或换个说法"),
+        kind: 'err',
+        text: getErrorMessage(err, '处理失败，请重试或换个说法'),
       });
     } finally {
       setSubmitting(false);
@@ -232,23 +228,19 @@ export default function HomePage() {
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
       }
     },
-    [handleSubmit],
+    [handleSubmit]
   );
 
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-foreground">
-          嗨，今天想记点什么？
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          一句话搞定提醒、计时、待办和记账
-        </p>
+        <h1 className="text-2xl font-semibold text-foreground">嗨，今天想记点什么？</h1>
+        <p className="text-sm text-muted-foreground mt-1">一句话搞定提醒、计时、待办和记账</p>
       </div>
 
       <Card className="rounded-2xl">
@@ -280,16 +272,12 @@ export default function HomePage() {
 
           <div className="flex items-center justify-between pt-1">
             <span
-              className={`text-xs ${status.kind === "err" ? "text-destructive" : status.kind === "ok" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}
+              className={`text-xs ${status.kind === 'err' ? 'text-destructive' : status.kind === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}
             >
-              {status.text || "回车发送，Shift+回车换行"}
+              {status.text || '回车发送，Shift+回车换行'}
             </span>
-            <Button
-              onClick={handleSubmit}
-              disabled={!input.trim() || submitting}
-              size="sm"
-            >
-              {submitting ? "处理中…" : "发送"}
+            <Button onClick={handleSubmit} disabled={!input.trim() || submitting} size="sm">
+              {submitting ? '处理中…' : '发送'}
             </Button>
           </div>
         </CardContent>
@@ -297,9 +285,7 @@ export default function HomePage() {
 
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-shrink-0 flex items-center justify-between mb-2">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            最近记录
-          </h2>
+          <h2 className="text-sm font-medium text-muted-foreground">最近记录</h2>
           <Button
             onClick={refreshAll}
             variant="ghost"
@@ -309,7 +295,8 @@ export default function HomePage() {
             刷新
           </Button>
         </div>
-        {(remindersRes.loading || todosRes.loading || financeRes.loading || timersRes.loading) && feed.length === 0 ? (
+        {(remindersRes.loading || todosRes.loading || financeRes.loading || timersRes.loading) &&
+        feed.length === 0 ? (
           <div className="flex justify-center py-10">
             <Spinner className="text-muted-foreground" />
           </div>
@@ -330,19 +317,13 @@ export default function HomePage() {
                   <span className={`mt-2 w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {meta.label}
-                      </span>
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {item.title}
-                      </p>
+                      <span className="text-xs text-muted-foreground shrink-0">{meta.label}</span>
+                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-muted-foreground truncate">
-                        {item.subtitle}
-                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
                       <p className="text-xs text-muted-foreground/50 flex-shrink-0">
-                        {dayjs(item.timestamp).format("M/D HH:mm")}
+                        {dayjs(item.timestamp).format('M/D HH:mm')}
                       </p>
                     </div>
                   </div>
@@ -356,4 +337,3 @@ export default function HomePage() {
     </div>
   );
 }
-

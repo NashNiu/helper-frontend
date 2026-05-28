@@ -4,12 +4,7 @@ import { getErrorMessage } from '../api/http';
 import type { CategoryTree } from '../api/category';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
 interface Props {
@@ -28,10 +23,17 @@ export default function CategoryModal({ open, onClose }: Props) {
   useEffect(() => {
     if (!open) return;
     let active = true;
-    categoryApi.getAll()
-      .then((data) => { if (active) setTree(data); })
-      .catch(() => { if (active) setError('加载分类失败'); });
-    return () => { active = false; };
+    categoryApi
+      .getAll()
+      .then((data) => {
+        if (active) setTree(data);
+      })
+      .catch(() => {
+        if (active) setError('加载分类失败');
+      });
+    return () => {
+      active = false;
+    };
   }, [open, refreshCount]);
 
   const handleAddPrimary = async () => {
@@ -76,9 +78,7 @@ export default function CategoryModal({ open, onClose }: Props) {
           <DialogTitle>管理分类</DialogTitle>
         </DialogHeader>
 
-        {error && (
-          <p className="text-red-500 text-sm mb-2">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
 
         <div className="space-y-4">
           {tree.map((primary) => (
@@ -98,10 +98,7 @@ export default function CategoryModal({ open, onClose }: Props) {
               <div className="flex flex-wrap gap-1 mb-2">
                 {primary.children.map((sub) => (
                   <div key={sub.id} className="flex items-center gap-0.5">
-                    <Badge
-                      variant={sub.is_builtin ? 'secondary' : 'outline'}
-                      className="text-xs"
-                    >
+                    <Badge variant={sub.is_builtin ? 'secondary' : 'outline'} className="text-xs">
                       {sub.name}
                     </Badge>
                     {!sub.is_builtin && (
@@ -126,9 +123,7 @@ export default function CategoryModal({ open, onClose }: Props) {
                       [primary.id]: e.target.value,
                     }))
                   }
-                  onKeyDown={(e) =>
-                    e.key === 'Enter' && handleAddSub(primary.id)
-                  }
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddSub(primary.id)}
                   placeholder="+ 子分类"
                   className="h-7 text-xs"
                 />

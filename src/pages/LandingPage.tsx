@@ -14,7 +14,8 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [loginOpen, setLoginOpen] = useState(false);
+  const locationState = location.state as LocationState | null;
+  const [loginOpen, setLoginOpen] = useState(() => !!locationState?.openLogin);
   const [registerOpen, setRegisterOpen] = useState(false);
 
   // Redirect already-authenticated users straight to the app
@@ -24,20 +25,11 @@ export default function LandingPage() {
     }
   }, [status, navigate]);
 
-  // Auto-open login modal when ProtectedRoute redirected here
-  useEffect(() => {
-    const state = location.state as LocationState | null;
-    if (state?.openLogin) {
-      setLoginOpen(true);
-    }
-  }, [location.state]);
-
   // Show nothing while auth status is resolving to avoid flash
   if (status === 'initializing') return null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-
       {/* ── Navbar ── */}
       <nav className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -79,10 +71,7 @@ export default function LandingPage() {
             输入自然语言，AI 自动识别并分类到提醒、计时、待办或记账 — 无需手动填表。
           </p>
           <div className="flex justify-center gap-3 flex-wrap">
-            <Button
-              className="px-6 py-2.5"
-              onClick={() => setRegisterOpen(true)}
-            >
+            <Button className="px-6 py-2.5" onClick={() => setRegisterOpen(true)}>
               免费开始使用
             </Button>
             <Button
@@ -145,13 +134,10 @@ export default function LandingPage() {
             <span className="inline-block bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full mb-4">
               ✦ AI 核心能力
             </span>
-            <h3 className="text-xl font-bold mb-3 leading-snug">
-              一句话，同时搞定多件事
-            </h3>
+            <h3 className="text-xl font-bold mb-3 leading-snug">一句话，同时搞定多件事</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-5">
               "午饭花了 15 元，下午 3 点提醒我开会，再帮我加个番茄钟"
-              <br />
-              — AI 识别出记账 + 提醒 + 计时，一次全部处理。
+              <br />— AI 识别出记账 + 提醒 + 计时，一次全部处理。
             </p>
             <Button onClick={() => setRegisterOpen(true)}>立即体验</Button>
           </div>

@@ -25,7 +25,7 @@ export default function ReminderPage() {
   const { confirm, dialog } = useConfirm();
 
   const handleSaved = (updated: Reminder) => {
-    setReminders(prev => prev.map(r => r.id === updated.id ? updated : r));
+    setReminders((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
     rescheduleOne(updated);
     setEditing(null);
   };
@@ -42,7 +42,9 @@ export default function ReminderPage() {
         if (!cancelled) setFetchLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCreate = async () => {
@@ -52,29 +54,35 @@ export default function ReminderPage() {
     requestNotificationPermission().catch(() => {});
     try {
       const r = await reminderApi.create(input);
-      setReminders(prev => [r, ...prev]);
+      setReminders((prev) => [r, ...prev]);
       scheduleOne(r);
       setInput('');
     } catch (err) {
       setError(getErrorMessage(err, '创建失败，请检查输入重试'));
-    } finally { setCreating(false); }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!await confirm('确认删除这条提醒？')) return;
-    setDeletingIds(prev => new Set(prev).add(id));
-    try {
-      await reminderApi.remove(id);
-      setReminders(prev => prev.filter(r => r.id !== id));
-    } catch (err) {
-      setError(getErrorMessage(err, '删除失败，请重试'));
     } finally {
-      setDeletingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+      setCreating(false);
     }
   };
 
-  const pending = reminders.filter(r => !r.is_triggered);
-  const triggered = reminders.filter(r => r.is_triggered);
+  const handleDelete = async (id: number) => {
+    if (!(await confirm('确认删除这条提醒？'))) return;
+    setDeletingIds((prev) => new Set(prev).add(id));
+    try {
+      await reminderApi.remove(id);
+      setReminders((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setError(getErrorMessage(err, '删除失败，请重试'));
+    } finally {
+      setDeletingIds((prev) => {
+        const s = new Set(prev);
+        s.delete(id);
+        return s;
+      });
+    }
+  };
+
+  const pending = reminders.filter((r) => !r.is_triggered);
+  const triggered = reminders.filter((r) => r.is_triggered);
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -87,8 +95,8 @@ export default function ReminderPage() {
             <div className="flex gap-2">
               <Input
                 value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
                 placeholder="例：30分钟后提醒我提交日志"
                 className="flex-1"
               />
@@ -102,88 +110,92 @@ export default function ReminderPage() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
-      {fetchLoading ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="text-muted-foreground" />
-        </div>
-      ) : (
-        <>
-          {pending.length > 0 && (
-            <div>
-              <h2 className="text-sm font-medium text-muted-foreground mb-2">待触发</h2>
-              <div className="space-y-2">
-                {pending.map(r => (
-                  <Card key={r.id}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{r.message}</p>
-                          <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
+        {fetchLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner className="text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            {pending.length > 0 && (
+              <div>
+                <h2 className="text-sm font-medium text-muted-foreground mb-2">待触发</h2>
+                <div className="space-y-2">
+                  {pending.map((r) => (
+                    <Card key={r.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-3">
+                          <BellAlertIcon className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">{r.message}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditing(r)}
+                            disabled={deletingIds.has(r.id)}
+                            aria-label="编辑提醒"
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deletingIds.has(r.id)}
+                            aria-label="删除提醒"
+                          >
+                            {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditing(r)}
-                          disabled={deletingIds.has(r.id)}
-                          aria-label="编辑提醒"
-                        >
-                          编辑
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(r.id)}
-                          disabled={deletingIds.has(r.id)}
-                          aria-label="删除提醒"
-                        >
-                          {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {triggered.length > 0 && (
-            <div className="opacity-60">
-              <h2 className="text-sm font-medium text-muted-foreground mb-2">已触发</h2>
-              <div className="space-y-2">
-                {triggered.map(r => (
-                  <Card key={r.id}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircleIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-muted-foreground">{r.message}</p>
-                          <p className="text-xs text-muted-foreground">{dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}</p>
+            {triggered.length > 0 && (
+              <div className="opacity-60">
+                <h2 className="text-sm font-medium text-muted-foreground mb-2">已触发</h2>
+                <div className="space-y-2">
+                  {triggered.map((r) => (
+                    <Card key={r.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-3">
+                          <CheckCircleIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-muted-foreground">{r.message}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {dayjs(r.trigger_at).format('YYYY/MM/DD HH:mm')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deletingIds.has(r.id)}
+                            aria-label="删除提醒"
+                          >
+                            {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(r.id)}
-                          disabled={deletingIds.has(r.id)}
-                          aria-label="删除提醒"
-                        >
-                          {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {!fetchLoading && pending.length === 0 && triggered.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">暂无提醒</p>
-          )}
-        </>
-      )}
+            {!fetchLoading && pending.length === 0 && triggered.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">暂无提醒</p>
+            )}
+          </>
+        )}
       </div>
       <EditReminderModal
         key={editing?.id ?? 'none'}

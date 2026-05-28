@@ -39,7 +39,7 @@ export default function TodoPage() {
     setSavingEdit(true);
     try {
       const updated = await todoApi.update(editingId, { content });
-      setTodos(prev => prev.map(t => t.id === editingId ? updated : t));
+      setTodos((prev) => prev.map((t) => (t.id === editingId ? updated : t)));
       cancelEdit();
     } catch (err) {
       setError(getErrorMessage(err, '保存失败，请重试'));
@@ -51,8 +51,13 @@ export default function TodoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { confirm, dialog } = useConfirm();
 
-  const addOp = (id: number) => setOperatingIds(prev => new Set(prev).add(id));
-  const removeOp = (id: number) => setOperatingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+  const addOp = (id: number) => setOperatingIds((prev) => new Set(prev).add(id));
+  const removeOp = (id: number) =>
+    setOperatingIds((prev) => {
+      const s = new Set(prev);
+      s.delete(id);
+      return s;
+    });
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +71,9 @@ export default function TodoPage() {
         if (!cancelled) setFetchLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCreate = async () => {
@@ -75,12 +82,15 @@ export default function TodoPage() {
     setCreating(true);
     try {
       const todo = await todoApi.create(content, pendingFiles);
-      setTodos(prev => [todo, ...prev]);
-      setContent(''); setPendingFiles([]);
+      setTodos((prev) => [todo, ...prev]);
+      setContent('');
+      setPendingFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       setError(getErrorMessage(err, '创建待办失败，请重试'));
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleToggle = async (todo: Todo) => {
@@ -89,36 +99,44 @@ export default function TodoPage() {
     addOp(todo.id);
     try {
       const updated = await todoApi.update(todo.id, { is_done: !todo.is_done });
-      setTodos(prev => prev.map(t => t.id === todo.id ? updated : t));
+      setTodos((prev) => prev.map((t) => (t.id === todo.id ? updated : t)));
     } catch (err) {
       setError(getErrorMessage(err, '更新待办失败，请重试'));
-    } finally { removeOp(todo.id); }
+    } finally {
+      removeOp(todo.id);
+    }
   };
 
   const handleDelete = async (id: number) => {
-    if (!await confirm('确认删除这条待办？相关图片也会一并删除。')) return;
+    if (!(await confirm('确认删除这条待办？相关图片也会一并删除。'))) return;
     setError('');
     addOp(id);
     try {
       await todoApi.remove(id);
-      setTodos(prev => prev.filter(t => t.id !== id));
+      setTodos((prev) => prev.filter((t) => t.id !== id));
     } catch (err) {
       setError(getErrorMessage(err, '删除待办失败，请重试'));
-    } finally { removeOp(id); }
+    } finally {
+      removeOp(id);
+    }
   };
 
   const handleDeleteImage = async (todoId: number, imageId: number) => {
     setError('');
     try {
       await todoApi.removeImage(todoId, imageId);
-      setTodos(prev => prev.map(t => t.id === todoId ? { ...t, images: t.images.filter(i => i.id !== imageId) } : t));
+      setTodos((prev) =>
+        prev.map((t) =>
+          t.id === todoId ? { ...t, images: t.images.filter((i) => i.id !== imageId) } : t
+        )
+      );
     } catch (err) {
       setError(getErrorMessage(err, '删除图片失败，请重试'));
     }
   };
 
-  const pending = todos.filter(t => !t.is_done);
-  const done = todos.filter(t => t.is_done);
+  const pending = todos.filter((t) => !t.is_done);
+  const done = todos.filter((t) => t.is_done);
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -131,8 +149,8 @@ export default function TodoPage() {
             <div className="flex gap-2">
               <Input
                 value={content}
-                onChange={e => setContent(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !creating && handleCreate()}
+                onChange={(e) => setContent(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
                 placeholder="添加待办..."
                 className="flex-1"
               />
@@ -161,7 +179,7 @@ export default function TodoPage() {
               accept="image/*"
               multiple
               className="hidden"
-              onChange={e => setPendingFiles(Array.from(e.target.files ?? []))}
+              onChange={(e) => setPendingFiles(Array.from(e.target.files ?? []))}
             />
             {pendingFiles.length > 0 && (
               <div className="flex flex-wrap gap-2">
@@ -184,7 +202,8 @@ export default function TodoPage() {
         ) : (
           <>
             <TodoList
-              title="待完成" items={pending}
+              title="待完成"
+              items={pending}
               operatingIds={operatingIds}
               editingId={editingId}
               draft={draft}
@@ -193,11 +212,14 @@ export default function TodoPage() {
               onCancelEdit={cancelEdit}
               onSaveEdit={saveEdit}
               onDraftChange={setDraft}
-              onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onDeleteImage={handleDeleteImage}
             />
             {done.length > 0 && (
               <TodoList
-                title="已完成" items={done}
+                title="已完成"
+                items={done}
                 operatingIds={operatingIds}
                 editingId={editingId}
                 draft={draft}
@@ -206,7 +228,9 @@ export default function TodoPage() {
                 onCancelEdit={cancelEdit}
                 onSaveEdit={saveEdit}
                 onDraftChange={setDraft}
-                onToggle={handleToggle} onDelete={handleDelete} onDeleteImage={handleDeleteImage}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onDeleteImage={handleDeleteImage}
               />
             )}
             {pending.length === 0 && done.length === 0 && (
@@ -221,12 +245,22 @@ export default function TodoPage() {
 }
 
 function TodoList({
-  title, items, operatingIds,
-  editingId, draft, savingEdit,
-  onStartEdit, onCancelEdit, onSaveEdit, onDraftChange,
-  onToggle, onDelete, onDeleteImage,
+  title,
+  items,
+  operatingIds,
+  editingId,
+  draft,
+  savingEdit,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  onDraftChange,
+  onToggle,
+  onDelete,
+  onDeleteImage,
 }: {
-  title: string; items: Todo[];
+  title: string;
+  items: Todo[];
   operatingIds: Set<number>;
   editingId: number | null;
   draft: string;
@@ -235,16 +269,19 @@ function TodoList({
   onCancelEdit: () => void;
   onSaveEdit: () => void;
   onDraftChange: (v: string) => void;
-  onToggle: (t: Todo) => void; onDelete: (id: number) => void;
+  onToggle: (t: Todo) => void;
+  onDelete: (id: number) => void;
   onDeleteImage: (todoId: number, imageId: number) => void;
 }) {
   if (items.length === 0) return null;
   const isDoneList = items.length > 0 && items[0].is_done;
   return (
     <div className={isDoneList ? 'opacity-70' : undefined}>
-      <h2 className="text-sm font-medium text-muted-foreground mb-2">{title}（{items.length}）</h2>
+      <h2 className="text-sm font-medium text-muted-foreground mb-2">
+        {title}（{items.length}）
+      </h2>
       <div className="space-y-2">
-        {items.map(todo => {
+        {items.map((todo) => {
           const busy = operatingIds.has(todo.id);
           const isEditing = editingId === todo.id;
           return (
@@ -266,8 +303,8 @@ function TodoList({
                   {isEditing ? (
                     <Input
                       value={draft}
-                      onChange={e => onDraftChange(e.target.value)}
-                      onKeyDown={e => {
+                      onChange={(e) => onDraftChange(e.target.value)}
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && !savingEdit) onSaveEdit();
                         if (e.key === 'Escape') onCancelEdit();
                       }}
@@ -275,7 +312,9 @@ function TodoList({
                       className="flex-1"
                     />
                   ) : (
-                    <span className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}>
+                    <span
+                      className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}
+                    >
                       {todo.content}
                     </span>
                   )}
@@ -322,7 +361,10 @@ function TodoList({
                     </>
                   )}
                 </div>
-                <ImageGallery images={todo.images} onDelete={imageId => onDeleteImage(todo.id, imageId)} />
+                <ImageGallery
+                  images={todo.images}
+                  onDelete={(imageId) => onDeleteImage(todo.id, imageId)}
+                />
               </CardContent>
             </Card>
           );

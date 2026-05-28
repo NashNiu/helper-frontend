@@ -21,8 +21,10 @@ export function requestNotificationPermission(): Promise<NotifyPermission> {
   }
   if (pendingRequest) return pendingRequest;
   pendingRequest = Notification.requestPermission()
-    .then(p => p as NotifyPermission)
-    .finally(() => { pendingRequest = null; });
+    .then((p) => p as NotifyPermission)
+    .finally(() => {
+      pendingRequest = null;
+    });
   return pendingRequest;
 }
 
@@ -54,7 +56,11 @@ export function showSystemNotification(options: ShowOptions): Notification | nul
     });
     if (options.focusOnClick !== false) {
       n.onclick = () => {
-        try { window.focus(); } catch { /* ignore */ }
+        try {
+          window.focus();
+        } catch {
+          /* ignore */
+        }
         n.close();
       };
     }

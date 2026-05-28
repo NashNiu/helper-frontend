@@ -23,15 +23,10 @@ export interface FinanceRecord {
 
 export const financeApi = {
   getAll: (from?: number, to?: number) =>
-    http
-      .get<FinanceRecord[]>('/api/finance', { params: { from, to } })
-      .then((r) => r.data),
+    http.get<FinanceRecord[]>('/api/finance', { params: { from, to } }).then((r) => r.data),
   create: (input: string) =>
     http
-      .post<{ records: FinanceRecord[]; new_categories: Category[] }>(
-        '/api/finance',
-        { input },
-      )
+      .post<{ records: FinanceRecord[]; new_categories: Category[] }>('/api/finance', { input })
       .then((r) => r.data),
   update: (
     id: number,
@@ -40,10 +35,7 @@ export const financeApi = {
       note?: string | null;
       happened_at?: string;
       category_id?: number;
-    },
-  ) =>
-    http
-      .patch<FinanceRecord>(`/api/finance/${id}`, data)
-      .then((r) => r.data),
+    }
+  ) => http.patch<FinanceRecord>(`/api/finance/${id}`, data).then((r) => r.data),
   remove: (id: number) => http.delete(`/api/finance/${id}`),
 };

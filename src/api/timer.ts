@@ -10,10 +10,10 @@ export interface Timer {
 }
 
 export const timerApi = {
-  getAll: () => http.get<Timer[]>('/api/timers').then(r => r.data),
+  getAll: () => http.get<Timer[]>('/api/timers').then((r) => r.data),
   create: (name: string, duration_seconds: number) =>
-    http.post<Timer>('/api/timers', { name, duration_seconds }).then(r => r.data),
+    http.post<Timer>('/api/timers', { name, duration_seconds }).then((r) => r.data),
   createFromText: (input: string) =>
-    http.post<Timer>('/api/timers/parse', { input }).then(r => r.data),
+    http.post<Timer>('/api/timers/parse', { input }).then((r) => r.data),
   remove: (id: number) => http.delete(`/api/timers/${id}`),
 };

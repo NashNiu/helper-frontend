@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
         setSubmitting(false);
       }
     },
-    [token, password, confirm, submitting, navigate],
+    [token, password, confirm, submitting, navigate]
   );
 
   return (
@@ -72,9 +72,7 @@ export default function ResetPasswordPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                再次输入新密码
-              </label>
+              <label className="text-xs text-muted-foreground">再次输入新密码</label>
               <Input
                 type="password"
                 value={confirm}
