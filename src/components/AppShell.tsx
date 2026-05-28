@@ -11,11 +11,11 @@ import RemindersProvider from '../contexts/RemindersProvider';
 import ActiveTimerProvider from '../contexts/ActiveTimerProvider';
 
 const navItems = [
-  { to: '/', label: '首页' },
-  { to: '/reminders', label: '提醒' },
-  { to: '/timer', label: '计时器' },
-  { to: '/todo', label: '待办' },
-  { to: '/finance', label: '收支' },
+  { to: '/app', label: '首页' },
+  { to: '/app/reminders', label: '提醒' },
+  { to: '/app/timer', label: '计时器' },
+  { to: '/app/todo', label: '待办' },
+  { to: '/app/finance', label: '收支' },
 ];
 
 /**
@@ -52,7 +52,7 @@ export default function AppShell() {
           <nav className="flex-shrink-0 bg-background border-b wco-drag">
             <div className="max-w-3xl mx-auto h-12 flex items-center">
               <NavLink
-                to="/"
+                to="/app"
                 className="flex-shrink-0 font-semibold text-sm text-foreground tracking-tight px-4 whitespace-nowrap wco-no-drag"
               >
                 助手
@@ -63,7 +63,7 @@ export default function AppShell() {
                     <NavLink
                       key={to}
                       to={to}
-                      end={to === '/'}
+                      end={to === '/app'}
                       className={({ isActive }) =>
                         `px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors wco-no-drag ${
                           isActive

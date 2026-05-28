@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import LandingPage from './pages/LandingPage';
 import AuthProvider from './contexts/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
@@ -17,14 +18,16 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* 未登录可访问的页面 */}
+          {/* 公开页面 */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* 登录后才能用的主体：所有业务页都嵌在 AppShell 下 */}
+          {/* 登录后才能用的主体 */}
           <Route
+            path="/app"
             element={
               <ProtectedRoute>
                 <AppShell />
