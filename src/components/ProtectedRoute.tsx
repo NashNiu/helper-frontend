@@ -1,5 +1,5 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/useAuth";
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { status } = useAuth();
   const location = useLocation();
 
-  if (status === "initializing") {
+  if (status === 'initializing') {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center gap-4">
         {/* 旋转光环 */}
@@ -22,7 +22,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           <div className="absolute inset-0 rounded-full border-4 border-muted" />
           <div
             className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary"
-            style={{ animation: "spin 0.9s linear infinite" }}
+            style={{ animation: 'spin 0.9s linear infinite' }}
           />
         </div>
 
@@ -34,7 +34,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
               key={i}
               className="inline-block w-1 h-1 rounded-full bg-muted-foreground"
               style={{
-                animation: "bounce 1.2s ease-in-out infinite",
+                animation: 'bounce 1.2s ease-in-out infinite',
                 animationDelay: `${i * 0.2}s`,
               }}
             />
@@ -54,9 +54,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (status === "unauthenticated") {
+  if (status === 'unauthenticated') {
     return <Navigate to="/" replace state={{ openLogin: true, from: location }} />;
   }
   return <>{children}</>;
 }
-

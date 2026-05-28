@@ -1,82 +1,76 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import dayjs from "dayjs";
-import { useConfirm } from "../hooks/useConfirm";
-import { financeApi } from "../api/finance";
-import type { FinanceRecord } from "../api/finance";
-import FinanceCharts from "../components/FinanceCharts";
-import CategoryModal from "../components/CategoryModal";
-import { categoryApi } from "../api/category";
-import type { CategoryTree } from "../api/category";
-import EditFinanceModal from "../components/EditFinanceModal";
-import { getErrorMessage } from "../api/http";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { DateRangePicker } from "@/components/DateRangePicker";
-import { Spinner } from "@/components/ui/spinner";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import dayjs from 'dayjs';
+import { useConfirm } from '../hooks/useConfirm';
+import { financeApi } from '../api/finance';
+import type { FinanceRecord } from '../api/finance';
+import FinanceCharts from '../components/FinanceCharts';
+import CategoryModal from '../components/CategoryModal';
+import { categoryApi } from '../api/category';
+import type { CategoryTree } from '../api/category';
+import EditFinanceModal from '../components/EditFinanceModal';
+import { getErrorMessage } from '../api/http';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { DateRangePicker } from '@/components/DateRangePicker';
+import { Spinner } from '@/components/ui/spinner';
 
-type Range = "today" | "week" | "month" | "year" | "custom";
+type Range = 'today' | 'week' | 'month' | 'year' | 'custom';
 
-function getRangeDates(
-  range: Exclude<Range, "custom">,
-  offset = 0,
-): { from: number; to: number } {
+function getRangeDates(range: Exclude<Range, 'custom'>, offset = 0): { from: number; to: number } {
   const now = dayjs();
-  const todayEnd = now.endOf("day").valueOf();
+  const todayEnd = now.endOf('day').valueOf();
 
-  if (range === "today") {
-    return { from: now.startOf("day").valueOf(), to: todayEnd };
+  if (range === 'today') {
+    return { from: now.startOf('day').valueOf(), to: todayEnd };
   }
-  if (range === "week") {
+  if (range === 'week') {
     const dow = now.day(); // 0=Sun, 1=Mon … 6=Sat
     const daysToMon = dow === 0 ? 6 : dow - 1;
     const monday = now
-      .subtract(daysToMon, "day")
-      .add(offset * 7, "day")
-      .startOf("day");
-    const sunday = monday.add(6, "day").endOf("day");
+      .subtract(daysToMon, 'day')
+      .add(offset * 7, 'day')
+      .startOf('day');
+    const sunday = monday.add(6, 'day').endOf('day');
     return {
       from: monday.valueOf(),
       to: offset >= 0 ? todayEnd : sunday.valueOf(),
     };
   }
-  if (range === "year") {
-    const y = now.add(offset, "year");
+  if (range === 'year') {
+    const y = now.add(offset, 'year');
     return {
-      from: y.startOf("year").valueOf(),
-      to: offset >= 0 ? todayEnd : y.endOf("year").valueOf(),
+      from: y.startOf('year').valueOf(),
+      to: offset >= 0 ? todayEnd : y.endOf('year').valueOf(),
     };
   }
   // month
-  const m = now.add(offset, "month");
+  const m = now.add(offset, 'month');
   return {
-    from: m.startOf("month").valueOf(),
-    to: offset >= 0 ? todayEnd : m.endOf("month").valueOf(),
+    from: m.startOf('month').valueOf(),
+    to: offset >= 0 ? todayEnd : m.endOf('month').valueOf(),
   };
 }
 
-function getPeriodLabel(
-  range: "week" | "month" | "year",
-  offset: number,
-): string {
+function getPeriodLabel(range: 'week' | 'month' | 'year', offset: number): string {
   const now = dayjs();
-  if (range === "week") {
+  if (range === 'week') {
     const dow = now.day();
     const daysToMon = dow === 0 ? 6 : dow - 1;
-    const monday = now.subtract(daysToMon, "day").add(offset * 7, "day");
-    const sunday = monday.add(6, "day");
-    return `${monday.format("M/D")} ~ ${sunday.format("M/D")}`;
+    const monday = now.subtract(daysToMon, 'day').add(offset * 7, 'day');
+    const sunday = monday.add(6, 'day');
+    return `${monday.format('M/D')} ~ ${sunday.format('M/D')}`;
   }
-  if (range === "year") {
-    return `${now.add(offset, "year").year()}年`;
+  if (range === 'year') {
+    return `${now.add(offset, 'year').year()}年`;
   }
-  const d = now.add(offset, "month");
+  const d = now.add(offset, 'month');
   return `${d.year()}年${d.month() + 1}月`;
 }
 
 function todayStr(): string {
-  return dayjs().format("YYYY-MM-DD");
+  return dayjs().format('YYYY-MM-DD');
 }
 
 function getPrimaryName(r: FinanceRecord): string {
@@ -90,11 +84,11 @@ function getSubName(r: FinanceRecord): string | null {
 
 export default function FinancePage() {
   const [records, setRecords] = useState<FinanceRecord[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(true);
   const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
-  const [range, setRange] = useState<Range>("week");
+  const [range, setRange] = useState<Range>('week');
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const [yearOffset, setYearOffset] = useState(0);
@@ -103,7 +97,7 @@ export default function FinancePage() {
   const [showChart, setShowChart] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [newCatToast, setNewCatToast] = useState<string | null>(null);
   const { confirm, dialog } = useConfirm();
   const [categories, setCategories] = useState<CategoryTree[]>([]);
@@ -111,66 +105,49 @@ export default function FinancePage() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doLoad = useCallback(async (from: number, to: number) => {
-    setError("");
+    setError('');
     setListLoading(true);
     try {
       const data = await financeApi.getAll(from, to);
       setRecords(data);
     } catch (err) {
-      setError(getErrorMessage(err, "加载记录失败，请重试"));
+      setError(getErrorMessage(err, '加载记录失败，请重试'));
     } finally {
       setListLoading(false);
     }
   }, []);
 
   const loadCurrentRange = useCallback(
-    (
-      r: Range,
-      dateFrom: string,
-      dateTo: string,
-      weekOff = 0,
-      monthOff = 0,
-      yearOff = 0,
-    ) => {
-      if (r === "custom") {
+    (r: Range, dateFrom: string, dateTo: string, weekOff = 0, monthOff = 0, yearOff = 0) => {
+      if (r === 'custom') {
         if (!dateFrom || !dateTo) return Promise.resolve();
         return doLoad(
-          dayjs(dateFrom).startOf("day").valueOf(),
-          dayjs(dateTo).endOf("day").valueOf(),
+          dayjs(dateFrom).startOf('day').valueOf(),
+          dayjs(dateTo).endOf('day').valueOf()
         );
       }
-      const offset =
-        r === "week"
-          ? weekOff
-          : r === "month"
-            ? monthOff
-            : r === "year"
-              ? yearOff
-              : 0;
+      const offset = r === 'week' ? weekOff : r === 'month' ? monthOff : r === 'year' ? yearOff : 0;
       const { from, to } = getRangeDates(r, offset);
       return doLoad(from, to);
     },
-    [doLoad],
+    [doLoad]
   );
 
-  const rangeKey =
-    range === "custom"
-      ? ""
-      : `${range}-${weekOffset}-${monthOffset}-${yearOffset}`;
+  const rangeKey = range === 'custom' ? '' : `${range}-${weekOffset}-${monthOffset}-${yearOffset}`;
   const [prevRangeKey, setPrevRangeKey] = useState(rangeKey);
   if (rangeKey !== prevRangeKey) {
     setPrevRangeKey(rangeKey);
-    if (rangeKey !== "") setListLoading(true);
+    if (rangeKey !== '') setListLoading(true);
   }
 
   useEffect(() => {
-    if (range === "custom") return;
+    if (range === 'custom') return;
     const offset =
-      range === "week"
+      range === 'week'
         ? weekOffset
-        : range === "month"
+        : range === 'month'
           ? monthOffset
-          : range === "year"
+          : range === 'year'
             ? yearOffset
             : 0;
     let cancelled = false;
@@ -185,7 +162,7 @@ export default function FinancePage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(getErrorMessage(err, "加载记录失败，请重试"));
+          setError(getErrorMessage(err, '加载记录失败，请重试'));
           setListLoading(false);
         }
       });
@@ -217,42 +194,33 @@ export default function FinancePage() {
 
   const handleCreate = async () => {
     if (!input.trim()) return;
-    setError("");
+    setError('');
     setLoading(true);
     try {
       const result = await financeApi.create(input);
       if (result.new_categories.length > 0) {
-        const names = result.new_categories
-          .map((c) => `「${c.name}」`)
-          .join("");
+        const names = result.new_categories.map((c) => `「${c.name}」`).join('');
         setNewCatToast(`AI 识别到新分类${names}，已自动创建`);
         toastTimerRef.current = setTimeout(() => setNewCatToast(null), 4000);
       }
-      await loadCurrentRange(
-        range,
-        customFrom,
-        customTo,
-        weekOffset,
-        monthOffset,
-        yearOffset,
-      );
-      setInput("");
+      await loadCurrentRange(range, customFrom, customTo, weekOffset, monthOffset, yearOffset);
+      setInput('');
     } catch (err) {
-      setError(getErrorMessage(err, "记录创建失败，请重试"));
+      setError(getErrorMessage(err, '记录创建失败，请重试'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirm("确认删除这条记录？"))) return;
-    setError("");
+    if (!(await confirm('确认删除这条记录？'))) return;
+    setError('');
     setDeletingIds((prev) => new Set(prev).add(id));
     try {
       await financeApi.remove(id);
       setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
-      setError(getErrorMessage(err, "删除失败，请重试"));
+      setError(getErrorMessage(err, '删除失败，请重试'));
     } finally {
       setDeletingIds((prev) => {
         const s = new Set(prev);
@@ -266,20 +234,16 @@ export default function FinancePage() {
     setRecords((prev) =>
       prev
         .map((r) => (r.id === updated.id ? updated : r))
-        .sort(
-          (a, b) =>
-            new Date(b.happened_at).getTime() -
-            new Date(a.happened_at).getTime(),
-        ),
+        .sort((a, b) => new Date(b.happened_at).getTime() - new Date(a.happened_at).getTime())
     );
     setEditing(null);
   };
 
-  const RANGE_LABELS: Record<Exclude<Range, "custom">, string> = {
-    today: "今天",
-    week: "本周",
-    month: "本月",
-    year: "本年",
+  const RANGE_LABELS: Record<Exclude<Range, 'custom'>, string> = {
+    today: '今天',
+    week: '本周',
+    month: '本月',
+    year: '本年',
   };
 
   return (
@@ -290,9 +254,7 @@ export default function FinancePage() {
           <h1 className="text-2xl font-semibold text-foreground">收支记录</h1>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           {newCatToast && (
-            <p className="text-amber-600 text-sm bg-amber-50 rounded px-3 py-2">
-              {newCatToast}
-            </p>
+            <p className="text-amber-600 text-sm bg-amber-50 rounded px-3 py-2">{newCatToast}</p>
           )}
 
           <Card>
@@ -301,15 +263,13 @@ export default function FinancePage() {
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && !loading && handleCreate()
-                  }
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && handleCreate()}
                   placeholder="例：午饭吃了快餐，花了15"
                   className="flex-1"
                 />
                 <Button onClick={handleCreate} disabled={loading}>
                   {loading ? <Spinner className="h-4 w-4 mr-1" /> : null}
-                  {loading ? "解析中…" : "记录"}
+                  {loading ? '解析中…' : '记录'}
                 </Button>
               </div>
             </CardContent>
@@ -318,12 +278,10 @@ export default function FinancePage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex gap-2 flex-wrap">
-                {(
-                  ["today", "week", "month", "year"] as Exclude<Range, "custom">[]
-                ).map((r) => (
+                {(['today', 'week', 'month', 'year'] as Exclude<Range, 'custom'>[]).map((r) => (
                   <Button
                     key={r}
-                    variant={range === r ? "default" : "outline"}
+                    variant={range === r ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       setRange(r);
@@ -336,40 +294,32 @@ export default function FinancePage() {
                   </Button>
                 ))}
                 <Button
-                  variant={range === "custom" ? "default" : "outline"}
+                  variant={range === 'custom' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setRange("custom")}
+                  onClick={() => setRange('custom')}
                 >
                   自定义
                 </Button>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCategoryModal(true)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowCategoryModal(true)}>
                   管理分类
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowChart((v) => !v)}
-                >
-                  {showChart ? "隐藏图表" : "查看图表"}
+                <Button variant="ghost" size="sm" onClick={() => setShowChart((v) => !v)}>
+                  {showChart ? '隐藏图表' : '查看图表'}
                 </Button>
               </div>
             </div>
 
-            {(range === "week" || range === "month" || range === "year") && (
+            {(range === 'week' || range === 'month' || range === 'year') && (
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
                   onClick={() => {
-                    if (range === "week") setWeekOffset((o) => o - 1);
-                    else if (range === "month") setMonthOffset((o) => o - 1);
+                    if (range === 'week') setWeekOffset((o) => o - 1);
+                    else if (range === 'month') setMonthOffset((o) => o - 1);
                     else setYearOffset((o) => o - 1);
                   }}
                 >
@@ -378,11 +328,7 @@ export default function FinancePage() {
                 <span className="text-xs text-muted-foreground min-w-[90px] text-center select-none">
                   {getPeriodLabel(
                     range,
-                    range === "week"
-                      ? weekOffset
-                      : range === "month"
-                        ? monthOffset
-                        : yearOffset,
+                    range === 'week' ? weekOffset : range === 'month' ? monthOffset : yearOffset
                   )}
                 </span>
                 <Button
@@ -390,15 +336,15 @@ export default function FinancePage() {
                   size="sm"
                   className="h-7 px-2"
                   disabled={
-                    (range === "week"
+                    (range === 'week'
                       ? weekOffset
-                      : range === "month"
+                      : range === 'month'
                         ? monthOffset
                         : yearOffset) >= 0
                   }
                   onClick={() => {
-                    if (range === "week") setWeekOffset((o) => o + 1);
-                    else if (range === "month") setMonthOffset((o) => o + 1);
+                    if (range === 'week') setWeekOffset((o) => o + 1);
+                    else if (range === 'month') setMonthOffset((o) => o + 1);
                     else setYearOffset((o) => o + 1);
                   }}
                 >
@@ -407,13 +353,13 @@ export default function FinancePage() {
               </div>
             )}
 
-            {range === "custom" && (
+            {range === 'custom' && (
               <DateRangePicker
                 from={customFrom}
                 to={customTo}
                 onFromChange={setCustomFrom}
                 onToChange={setCustomTo}
-                onQuery={() => loadCurrentRange("custom", customFrom, customTo)}
+                onQuery={() => loadCurrentRange('custom', customFrom, customTo)}
               />
             )}
           </div>
@@ -426,12 +372,12 @@ export default function FinancePage() {
               records={records}
               onCategorySelect={setFilterCategory}
               onDayClick={(isoDay) => {
-                setRange("custom");
+                setRange('custom');
                 setCustomFrom(isoDay);
                 setCustomTo(isoDay);
                 doLoad(
-                  dayjs(isoDay).startOf("day").valueOf(),
-                  dayjs(isoDay).endOf("day").valueOf(),
+                  dayjs(isoDay).startOf('day').valueOf(),
+                  dayjs(isoDay).endOf('day').valueOf()
                 );
               }}
             />
@@ -465,8 +411,8 @@ export default function FinancePage() {
                     key={r.id}
                     className={
                       r.amount > 0
-                        ? "border-l-[3px] border-l-emerald-500"
-                        : "border-l-[3px] border-l-red-400"
+                        ? 'border-l-[3px] border-l-emerald-500'
+                        : 'border-l-[3px] border-l-red-400'
                     }
                   >
                     <CardContent className="p-4 flex items-center gap-3 py-1">
@@ -475,24 +421,17 @@ export default function FinancePage() {
                           <span
                             className={`text-base font-semibold ${
                               r.amount > 0
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-red-500 dark:text-red-400"
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-red-500 dark:text-red-400'
                             }`}
                           >
-                            {r.amount > 0 ? "+" : ""}¥
-                            {Math.abs(r.amount).toFixed(2)}
+                            {r.amount > 0 ? '+' : ''}¥{Math.abs(r.amount).toFixed(2)}
                           </span>
-                          <Badge
-                            variant="secondary"
-                            className="text-xs font-normal"
-                          >
+                          <Badge variant="secondary" className="text-xs font-normal">
                             {primary}
                           </Badge>
                           {sub && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs font-normal"
-                            >
+                            <Badge variant="outline" className="text-xs font-normal">
                               {sub}
                             </Badge>
                           )}
@@ -503,7 +442,7 @@ export default function FinancePage() {
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {dayjs(r.happened_at).format("YYYY/MM/DD HH:mm")}
+                          {dayjs(r.happened_at).format('YYYY/MM/DD HH:mm')}
                         </span>
                         <div className="flex gap-1">
                           <Button
@@ -523,11 +462,7 @@ export default function FinancePage() {
                             aria-label="删除记录"
                             className="text-destructive hover:text-destructive"
                           >
-                            {deletingIds.has(r.id) ? (
-                              <Spinner className="h-4 w-4" />
-                            ) : (
-                              "删除"
-                            )}
+                            {deletingIds.has(r.id) ? <Spinner className="h-4 w-4" /> : '删除'}
                           </Button>
                         </div>
                       </div>
@@ -539,21 +474,16 @@ export default function FinancePage() {
                 ? records.filter((r) => getPrimaryName(r) === filterCategory)
                 : records
               ).length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  暂无记录
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-8">暂无记录</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      <CategoryModal
-        open={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-      />
+      <CategoryModal open={showCategoryModal} onClose={() => setShowCategoryModal(false)} />
       <EditFinanceModal
-        key={editing?.id ?? "none"}
+        key={editing?.id ?? 'none'}
         record={editing}
         categories={categories}
         onClose={() => setEditing(null)}
@@ -563,4 +493,3 @@ export default function FinancePage() {
     </>
   );
 }
-

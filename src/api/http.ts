@@ -59,7 +59,7 @@ function extractMessage(data: unknown, fallback: string): string {
   if (data && typeof data === 'object') {
     const d = data as { message?: unknown };
     if (Array.isArray(d.message)) {
-      return d.message.filter(m => typeof m === 'string').join('；') || fallback;
+      return d.message.filter((m) => typeof m === 'string').join('；') || fallback;
     }
     if (typeof d.message === 'string' && d.message.trim()) return d.message;
   }
@@ -74,7 +74,7 @@ export function getErrorMessage(err: unknown, fallback: string): string {
 }
 
 http.interceptors.response.use(
-  res => res,
+  (res) => res,
   (err: AxiosError) => {
     const status = err.response?.status ?? 0;
     if (status === 401) {
@@ -94,5 +94,5 @@ http.interceptors.response.use(
     }
     const fallback = status >= 500 ? '服务器开了个小差，请稍后再试' : '请求失败';
     throw new ApiError(extractMessage(err.response?.data, fallback), status, err);
-  },
+  }
 );

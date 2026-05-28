@@ -32,16 +32,12 @@ export default function EditFinanceModal({ record, categories, onClose, onSaved 
   const initialSubId = record?.category_rel?.parent ? record.category_rel.id : 0;
 
   const [sign, setSign] = useState<'income' | 'expense'>(
-    (record?.amount ?? 0) >= 0 ? 'income' : 'expense',
+    (record?.amount ?? 0) >= 0 ? 'income' : 'expense'
   );
-  const [absAmount, setAbsAmount] = useState(
-    record ? Math.abs(record.amount).toString() : '',
-  );
+  const [absAmount, setAbsAmount] = useState(record ? Math.abs(record.amount).toString() : '');
   const [primaryId, setPrimaryId] = useState<number>(initialPrimaryId);
   const [subId, setSubId] = useState<number>(initialSubId); // 0 = 无子分类
-  const [happenedAt, setHappenedAt] = useState(
-    record ? toLocalInput(record.happened_at) : '',
-  );
+  const [happenedAt, setHappenedAt] = useState(record ? toLocalInput(record.happened_at) : '');
   const [note, setNote] = useState(record?.note ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -86,7 +82,12 @@ export default function EditFinanceModal({ record, categories, onClose, onSaved 
   };
 
   return (
-    <Dialog open={!!record} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={!!record}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>编辑收支记录</DialogTitle>
@@ -133,7 +134,9 @@ export default function EditFinanceModal({ record, categories, onClose, onSaved 
             >
               <option value={0}>请选择</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </label>
@@ -148,7 +151,9 @@ export default function EditFinanceModal({ record, categories, onClose, onSaved 
               >
                 <option value={0}>无子分类</option>
                 {subOptions.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </label>
@@ -174,7 +179,9 @@ export default function EditFinanceModal({ record, categories, onClose, onSaved 
           {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={saving}>取消</Button>
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
+            取消
+          </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? <Spinner className="h-4 w-4 mr-1" /> : null}
             保存

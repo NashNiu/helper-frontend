@@ -48,7 +48,7 @@ export default function LoginModal({ open, onClose, onSwitchToRegister }: Props)
         setSubmitting(false);
       }
     },
-    [identifier, password, submitting, login, navigate, onClose],
+    [identifier, password, submitting, login, navigate, onClose]
   );
 
   return (
@@ -93,14 +93,20 @@ export default function LoginModal({ open, onClose, onSwitchToRegister }: Props)
           <button
             type="button"
             className="hover:text-foreground transition-colors"
-            onClick={() => { onClose(); onSwitchToRegister(); }}
+            onClick={() => {
+              onClose();
+              onSwitchToRegister();
+            }}
           >
             没有账号？注册
           </button>
           <button
             type="button"
             className="hover:text-foreground transition-colors"
-            onClick={() => { onClose(); navigate('/forgot-password'); }}
+            onClick={() => {
+              onClose();
+              navigate('/forgot-password');
+            }}
           >
             忘记密码
           </button>

@@ -28,7 +28,9 @@ function getOrCreate<T>(key: string): CacheEntry<T> {
 }
 
 function notify(entry: CacheEntry<unknown>): void {
-  entry.listeners.forEach(fn => { fn(); });
+  entry.listeners.forEach((fn) => {
+    fn();
+  });
 }
 
 export function mutate<T>(key: string, data: T): void {
@@ -74,17 +76,13 @@ interface UseResourceResult<T> {
 export function useResource<T>(
   key: string,
   fetcher: () => Promise<T>,
-  options: UseResourceOptions = {},
+  options: UseResourceOptions = {}
 ): UseResourceResult<T> {
   const ttl = options.ttlMs ?? 30_000;
 
   // 初值从 cache 同步取出（lazy init 不触发额外 render）
-  const [data, setData] = useState<T | undefined>(
-    () => getOrCreate<T>(key).data,
-  );
-  const [error, setError] = useState<unknown>(
-    () => getOrCreate<T>(key).error,
-  );
+  const [data, setData] = useState<T | undefined>(() => getOrCreate<T>(key).data);
+  const [error, setError] = useState<unknown>(() => getOrCreate<T>(key).error);
   const [loading, setLoading] = useState<boolean>(() => {
     const e = getOrCreate<T>(key);
     return !e.data && !e.error;
@@ -132,8 +130,7 @@ export function useResource<T>(
     };
     e.listeners.add(sync);
 
-    const isFresh =
-      e.data !== undefined && (ttl === 0 || Date.now() - e.fetchedAt < ttl);
+    const isFresh = e.data !== undefined && (ttl === 0 || Date.now() - e.fetchedAt < ttl);
     if (!isFresh && !e.promise) {
       void refresh();
     }

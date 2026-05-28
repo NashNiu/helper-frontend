@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  getStoredToken,
-  setStoredToken,
-  UNAUTHORIZED_EVENT,
-} from '../api/http';
+import { getStoredToken, setStoredToken, UNAUTHORIZED_EVENT } from '../api/http';
 import { authApi, type AuthUser } from '../api/auth';
 import { invalidateAll } from '../hooks/useResource';
 import { AuthContext, type AuthContextValue } from './AuthContext';
@@ -15,7 +11,7 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthContextValue['status']>(() =>
-    getStoredToken() ? 'initializing' : 'unauthenticated',
+    getStoredToken() ? 'initializing' : 'unauthenticated'
   );
 
   useEffect(() => {
@@ -65,19 +61,14 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const register = useCallback(
-    async (input: {
-      username: string;
-      email: string;
-      password: string;
-      code: string;
-    }) => {
+    async (input: { username: string; email: string; password: string; code: string }) => {
       const result = await authApi.register(input);
       setStoredToken(result.access_token);
       invalidateAll();
       setUser(result.user);
       setStatus('authenticated');
     },
-    [],
+    []
   );
 
   const value = useMemo<AuthContextValue>(
@@ -88,7 +79,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       register,
       logout: performLogout,
     }),
-    [user, status, login, register, performLogout],
+    [user, status, login, register, performLogout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

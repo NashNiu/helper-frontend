@@ -16,15 +16,24 @@ interface Props {
 
 export default function ConfirmDialog({ open, message, onConfirm, onCancel }: Props) {
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onCancel();
+      }}
+    >
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>确认操作</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">{message}</p>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>取消</Button>
-          <Button variant="destructive" onClick={onConfirm}>确认</Button>
+          <Button variant="outline" onClick={onCancel}>
+            取消
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            确认
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

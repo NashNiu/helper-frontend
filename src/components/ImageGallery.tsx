@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { TodoImage } from "../api/todo";
-import { useConfirm } from "../hooks/useConfirm";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { TodoImage } from '../api/todo';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Props {
   images: TodoImage[];
@@ -13,15 +13,11 @@ export default function ImageGallery({ images, onDelete }: Props) {
 
   const isOpen = lightboxIndex !== null;
   const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
-  const safeIndex =
-    lightboxIndex !== null ? Math.min(lightboxIndex, sorted.length - 1) : null;
+  const safeIndex = lightboxIndex !== null ? Math.min(lightboxIndex, sorted.length - 1) : null;
 
   const { confirm, dialog } = useConfirm();
   const close = useCallback(() => setLightboxIndex(null), []);
-  const prev = useCallback(
-    () => setLightboxIndex((i) => Math.max(0, (i ?? 0) - 1)),
-    [],
-  );
+  const prev = useCallback(() => setLightboxIndex((i) => Math.max(0, (i ?? 0) - 1)), []);
   const next = useCallback(() => {
     setLightboxIndex((i) => Math.min(sorted.length - 1, (i ?? 0) + 1));
   }, [sorted.length]);
@@ -30,23 +26,23 @@ export default function ImageGallery({ images, onDelete }: Props) {
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         close();
-      } else if (e.key === "ArrowLeft") {
+      } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         prev();
-      } else if (e.key === "ArrowRight") {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         next();
       }
     };
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     dialogRef.current?.focus();
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [isOpen, close, prev, next]);
@@ -54,10 +50,10 @@ export default function ImageGallery({ images, onDelete }: Props) {
   const handleDelete = useCallback(
     async (imageId: number) => {
       if (!onDelete) return;
-      if (!(await confirm("确认删除这张图片？此操作不可撤销。"))) return;
+      if (!(await confirm('确认删除这张图片？此操作不可撤销。'))) return;
       onDelete(imageId);
     },
-    [onDelete, confirm],
+    [onDelete, confirm]
   );
 
   if (images.length === 0) return null;
@@ -152,4 +148,3 @@ export default function ImageGallery({ images, onDelete }: Props) {
     </>
   );
 }
-

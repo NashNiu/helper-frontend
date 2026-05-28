@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
         setSubmitting(false);
       }
     },
-    [email, submitting],
+    [email, submitting]
   );
 
   return (

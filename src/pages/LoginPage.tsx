@@ -14,8 +14,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from =
-    (location.state as LocationState | null)?.from?.pathname ?? '/app';
+  const from = (location.state as LocationState | null)?.from?.pathname ?? '/app';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -42,7 +41,7 @@ export default function LoginPage() {
         setSubmitting(false);
       }
     },
-    [identifier, password, submitting, login, navigate, from],
+    [identifier, password, submitting, login, navigate, from]
   );
 
   return (
@@ -51,16 +50,12 @@ export default function LoginPage() {
         <CardContent className="p-6 space-y-5">
           <div className="text-center space-y-1">
             <h1 className="text-xl font-semibold">登录助手</h1>
-            <p className="text-sm text-muted-foreground">
-              输入账号继续记录你的每一天
-            </p>
+            <p className="text-sm text-muted-foreground">输入账号继续记录你的每一天</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">
-                用户名或邮箱
-              </label>
+              <label className="text-xs text-muted-foreground">用户名或邮箱</label>
               <Input
                 type="text"
                 value={identifier}
@@ -81,9 +76,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-              <p className="text-xs text-destructive">{error}</p>
-            )}
+            {error && <p className="text-xs text-destructive">{error}</p>}
 
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? '登录中…' : '登录'}

@@ -116,14 +116,10 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Props)
         setSubmitting(false);
       }
     },
-    [username, email, code, password, confirm, submitting, register, navigate, onClose],
+    [username, email, code, password, confirm, submitting, register, navigate, onClose]
   );
 
-  const sendBtnLabel = codeSending
-    ? '发送中…'
-    : cooldown > 0
-      ? `${cooldown}s`
-      : '发送验证码';
+  const sendBtnLabel = codeSending ? '发送中…' : cooldown > 0 ? `${cooldown}s` : '发送验证码';
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -175,15 +171,11 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Props)
               pattern="\d{6}"
               maxLength={6}
               value={code}
-              onChange={(e) =>
-                setCode(e.target.value.replace(/\D/g, '').slice(0, 6))
-              }
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               autoComplete="one-time-code"
               disabled={submitting}
             />
-            {codeMsg && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400">{codeMsg}</p>
-            )}
+            {codeMsg && <p className="text-xs text-emerald-600 dark:text-emerald-400">{codeMsg}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">密码</label>
@@ -218,7 +210,10 @@ export default function RegisterModal({ open, onClose, onSwitchToLogin }: Props)
           <button
             type="button"
             className="ml-1 hover:text-foreground underline transition-colors"
-            onClick={() => { onClose(); onSwitchToLogin(); }}
+            onClick={() => {
+              onClose();
+              onSwitchToLogin();
+            }}
           >
             去登录
           </button>
