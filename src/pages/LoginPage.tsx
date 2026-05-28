@@ -15,7 +15,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from =
-    (location.state as LocationState | null)?.from?.pathname ?? '/';
+    (location.state as LocationState | null)?.from?.pathname ?? '/app';
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
