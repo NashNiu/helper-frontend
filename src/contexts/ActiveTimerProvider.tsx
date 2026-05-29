@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Timer } from '../api/timer';
 import { ActiveTimerContext, formatRemaining } from './ActiveTimerContext';
@@ -117,6 +117,13 @@ function beep() {
 
 export default function ActiveTimerProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<ActiveTimerState | null>(() => loadPersisted());
+  // Mirror of `active` kept in a ref so callbacks can read current state without
+  // being listed in deps (avoids stale-closure issues in setInterval callbacks).
+  const activeRef = useRef<ActiveTimerState | null>(active);
+  useLayoutEffect(() => {
+    activeRef.current = active;
+  });
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endsAtRef = useRef<number | null>(null);
   const notifiedIdRef = useRef<number | null>(loadNotifiedId());
@@ -148,24 +155,25 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
       const endsAt = endsAtRef.current;
       if (endsAt === null) return;
       const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-      setActive((prev) => {
-        if (!prev) return prev;
-        if (remaining <= 0) {
-          clearInterval$();
-          const done: ActiveTimerState = {
-            ...prev,
-            remaining: 0,
-            status: 'done',
-            formatted: formatRemaining(0),
-          };
-          persist(done);
-          // Pomodoro transitions are handled by the useEffect below
-          if (!prev.pomodoro) fireDone(done);
-          return done;
-        }
-        if (remaining === prev.remaining) return prev;
-        return { ...prev, remaining, formatted: formatRemaining(remaining) };
-      });
+      if (remaining <= 0) {
+        // All done-state side-effects run OUTSIDE the state updater.
+        // Calling fireDone inside setActive is a React anti-pattern: Concurrent Mode
+        // can call updaters multiple times, causing the notifiedIdRef guard to trip on
+        // the retried call and silently drop the notification.
+        clearInterval$();
+        const cur = activeRef.current;
+        if (!cur || cur.status !== 'running') return;
+        const done: ActiveTimerState = { ...cur, remaining: 0, status: 'done', formatted: formatRemaining(0) };
+        persist(done);
+        setActive(done);
+        // Pomodoro transitions are handled by the useEffect below
+        if (!cur.pomodoro) fireDone(done);
+      } else {
+        setActive((prev) => {
+          if (!prev || remaining === prev.remaining) return prev;
+          return { ...prev, remaining, formatted: formatRemaining(remaining) };
+        });
+      }
     }, 500);
   }, [clearInterval$, fireDone]);
 
@@ -219,6 +227,27 @@ export default function ActiveTimerProvider({ children }: { children: ReactNode 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // When the page becomes visible after being throttled/frozen by the browser,
+  // immediately check whether the timer expired while JS was paused rather than
+  // waiting up to a minute for the next throttled setInterval tick.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.hidden) return;
+      const endsAt = endsAtRef.current;
+      if (endsAt === null) return;
+      if (Math.ceil((endsAt - Date.now()) / 1000) > 0) return;
+      const cur = activeRef.current;
+      if (!cur || cur.status !== 'running') return;
+      clearInterval$();
+      const done: ActiveTimerState = { ...cur, remaining: 0, status: 'done', formatted: formatRemaining(0) };
+      persist(done);
+      setActive(done);
+      if (!cur.pomodoro) fireDone(done);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [clearInterval$, fireDone]);
 
   const start = useCallback(
     (timer: Timer) => {
