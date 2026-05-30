@@ -136,6 +136,7 @@ export default function TodoPage() {
     try {
       await todoCategoryApi.remove(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
+      setTodos((prev) => prev.map((t) => (t.category?.id === id ? { ...t, category: null } : t)));
       if (selectedCategoryId === id) setSelectedCategoryId(null);
       if (filterCategoryId === id) setFilterCategoryId(null);
     } catch (err) {
@@ -318,6 +319,7 @@ export default function TodoPage() {
                       e.key === 'Enter' && !creatingCategory && handleCreateCategory()
                     }
                     placeholder="新分类名称..."
+                    maxLength={50}
                     className="flex-1 h-7 text-xs"
                   />
                   <Button
@@ -344,31 +346,31 @@ export default function TodoPage() {
             )}
           </CardContent>
         </Card>
-            {categories.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <span className="text-xs text-muted-foreground flex-shrink-0">筛选：</span>
-                {(
-                  [
-                    { label: '全部', value: null as number | null | 'none' },
-                    { label: '无分类', value: 'none' as const },
-                    ...categories.map((c) => ({ label: c.name, value: c.id })),
-                  ] as const
-                ).map(({ label, value }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setFilterCategoryId(value as number | null | 'none')}
-                    className={`text-xs rounded-full px-3 py-0.5 border whitespace-nowrap flex-shrink-0 transition-colors ${
-                      filterCategoryId === value
-                        ? 'bg-foreground text-background border-foreground font-medium'
-                        : 'border-border text-muted-foreground hover:border-foreground/30'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
+        {categories.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-xs text-muted-foreground flex-shrink-0">筛选：</span>
+            {(
+              [
+                { label: '全部', value: null as number | null | 'none' },
+                { label: '无分类', value: 'none' as const },
+                ...categories.map((c) => ({ label: c.name, value: c.id })),
+              ] as const
+            ).map(({ label, value }) => (
+              <button
+                key={value === null ? '__all__' : value === 'none' ? '__none__' : String(value)}
+                type="button"
+                onClick={() => setFilterCategoryId(value as number | null | 'none')}
+                className={`text-xs rounded-full px-3 py-0.5 border whitespace-nowrap flex-shrink-0 transition-colors ${
+                  filterCategoryId === value
+                    ? 'bg-foreground text-background border-foreground font-medium'
+                    : 'border-border text-muted-foreground hover:border-foreground/30'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
