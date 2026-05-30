@@ -22,7 +22,6 @@ const CATEGORY_COLORS = [
   { bg: 'bg-yellow-50 dark:bg-yellow-950', text: 'text-yellow-600 dark:text-yellow-400' },
 ] as const;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getCategoryColor(id: number) {
   return CATEGORY_COLORS[id % CATEGORY_COLORS.length];
 }
@@ -345,6 +344,31 @@ export default function TodoPage() {
             )}
           </CardContent>
         </Card>
+            {categories.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <span className="text-xs text-muted-foreground flex-shrink-0">筛选：</span>
+                {(
+                  [
+                    { label: '全部', value: null as number | null | 'none' },
+                    { label: '无分类', value: 'none' as const },
+                    ...categories.map((c) => ({ label: c.name, value: c.id })),
+                  ] as const
+                ).map(({ label, value }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setFilterCategoryId(value as number | null | 'none')}
+                    className={`text-xs rounded-full px-3 py-0.5 border whitespace-nowrap flex-shrink-0 transition-colors ${
+                      filterCategoryId === value
+                        ? 'bg-foreground text-background border-foreground font-medium'
+                        : 'border-border text-muted-foreground hover:border-foreground/30'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
@@ -387,7 +411,9 @@ export default function TodoPage() {
               />
             )}
             {pending.length === 0 && done.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">暂无待办</p>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {filterCategoryId !== null ? '该分类下暂无待办' : '暂无待办'}
+              </p>
             )}
           </>
         )}
@@ -471,6 +497,17 @@ function TodoList({
                       {todo.content}
                     </span>
                   )}
+                  {!isEditing && todo.category &&
+                    (() => {
+                      const color = getCategoryColor(todo.category.id);
+                      return (
+                        <span
+                          className={`text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap flex-shrink-0 ${color.bg} ${color.text}`}
+                        >
+                          {todo.category.name}
+                        </span>
+                      );
+                    })()}
                   {isEditing ? (
                     <>
                       <Button
