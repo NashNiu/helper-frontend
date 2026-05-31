@@ -43,6 +43,8 @@ export default function TodoPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [filterCategoryId, setFilterCategoryId] = useState<number | null | 'none'>(null);
+  const [renamingCategoryId, setRenamingCategoryId] = useState<number | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
 
   const startEdit = (todo: Todo) => {
     setEditingId(todo.id);
@@ -141,6 +143,31 @@ export default function TodoPage() {
       if (filterCategoryId === id) setFilterCategoryId(null);
     } catch (err) {
       setError(getErrorMessage(err, '删除分类失败'));
+    }
+  };
+
+  const handleRenameCategory = async (id: number) => {
+    if (!renameDraft.trim()) return;
+    try {
+      const updated = await todoCategoryApi.rename(id, renameDraft.trim());
+      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      setTodos((prev) =>
+        prev.map((t) => (t.category?.id === id ? { ...t, category: updated } : t)),
+      );
+      setRenamingCategoryId(null);
+      setRenameDraft('');
+    } catch (err) {
+      setError(getErrorMessage(err, '重命名分类失败'));
+    }
+  };
+
+  const handleCategoryChange = async (todoId: number, categoryId: number | null) => {
+    setError('');
+    try {
+      const updated = await todoApi.update(todoId, { category_id: categoryId });
+      setTodos((prev) => prev.map((t) => (t.id === todoId ? updated : t)));
+    } catch (err) {
+      setError(getErrorMessage(err, '更新分类失败'));
     }
   };
 
@@ -291,22 +318,71 @@ export default function TodoPage() {
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  {categories.map((cat) => (
-                    <span
-                      key={cat.id}
-                      className="inline-flex items-center gap-1 text-xs rounded-full px-2.5 py-0.5 bg-muted text-foreground border border-border"
-                    >
-                      {cat.name}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCategory(cat.id)}
-                        className="w-3.5 h-3.5 rounded-full bg-muted-foreground/20 hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center text-[9px] leading-none transition-colors"
-                        aria-label={`删除分类 ${cat.name}`}
+                  {categories.map((cat) =>
+                    renamingCategoryId === cat.id ? (
+                      <div key={cat.id} className="inline-flex items-center gap-1">
+                        <Input
+                          value={renameDraft}
+                          onChange={(e) => setRenameDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRenameCategory(cat.id);
+                            if (e.key === 'Escape') {
+                              setRenamingCategoryId(null);
+                              setRenameDraft('');
+                            }
+                          }}
+                          maxLength={50}
+                          autoFocus
+                          className="h-6 text-xs w-24 rounded-full px-2"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRenameCategory(cat.id)}
+                          className="w-4 h-4 rounded-full bg-primary/20 hover:bg-primary hover:text-primary-foreground flex items-center justify-center text-[10px] transition-colors"
+                          aria-label="确认重命名"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRenamingCategoryId(null);
+                            setRenameDraft('');
+                          }}
+                          className="w-4 h-4 rounded-full bg-muted-foreground/20 hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center text-[9px] transition-colors"
+                          aria-label="取消重命名"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        key={cat.id}
+                        className="inline-flex items-center gap-1 text-xs rounded-full px-2.5 py-0.5 bg-muted text-foreground border border-border"
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        {cat.name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRenamingCategoryId(cat.id);
+                            setRenameDraft(cat.name);
+                          }}
+                          className="w-3.5 h-3.5 rounded-full bg-muted-foreground/20 hover:bg-primary hover:text-primary-foreground flex items-center justify-center text-[9px] leading-none transition-colors"
+                          aria-label={`重命名分类 ${cat.name}`}
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="w-3.5 h-3.5 rounded-full bg-muted-foreground/20 hover:bg-destructive hover:text-destructive-foreground flex items-center justify-center text-[9px] leading-none transition-colors"
+                          aria-label={`删除分类 ${cat.name}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ),
+                  )}
                   {categories.length === 0 && (
                     <span className="text-xs text-muted-foreground">暂无分类</span>
                   )}
@@ -387,6 +463,7 @@ export default function TodoPage() {
               editingId={editingId}
               draft={draft}
               savingEdit={savingEdit}
+              categories={categories}
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSaveEdit={saveEdit}
@@ -394,6 +471,7 @@ export default function TodoPage() {
               onToggle={handleToggle}
               onDelete={handleDelete}
               onDeleteImage={handleDeleteImage}
+              onCategoryChange={handleCategoryChange}
             />
             {done.length > 0 && (
               <TodoList
@@ -403,6 +481,7 @@ export default function TodoPage() {
                 editingId={editingId}
                 draft={draft}
                 savingEdit={savingEdit}
+                categories={categories}
                 onStartEdit={startEdit}
                 onCancelEdit={cancelEdit}
                 onSaveEdit={saveEdit}
@@ -410,6 +489,7 @@ export default function TodoPage() {
                 onToggle={handleToggle}
                 onDelete={handleDelete}
                 onDeleteImage={handleDeleteImage}
+                onCategoryChange={handleCategoryChange}
               />
             )}
             {pending.length === 0 && done.length === 0 && (
@@ -432,6 +512,7 @@ function TodoList({
   editingId,
   draft,
   savingEdit,
+  categories,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
@@ -439,6 +520,7 @@ function TodoList({
   onToggle,
   onDelete,
   onDeleteImage,
+  onCategoryChange,
 }: {
   title: string;
   items: Todo[];
@@ -446,6 +528,7 @@ function TodoList({
   editingId: number | null;
   draft: string;
   savingEdit: boolean;
+  categories: TodoCategory[];
   onStartEdit: (t: Todo) => void;
   onCancelEdit: () => void;
   onSaveEdit: () => void;
@@ -453,6 +536,7 @@ function TodoList({
   onToggle: (t: Todo) => void;
   onDelete: (id: number) => void;
   onDeleteImage: (todoId: number, imageId: number) => void;
+  onCategoryChange: (todoId: number, categoryId: number | null) => void;
 }) {
   if (items.length === 0) return null;
   const isDoneList = items.length > 0 && items[0].is_done;
@@ -482,16 +566,47 @@ function TodoList({
                     )}
                   </div>
                   {isEditing ? (
-                    <Input
-                      value={draft}
-                      onChange={(e) => onDraftChange(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !savingEdit) onSaveEdit();
-                        if (e.key === 'Escape') onCancelEdit();
-                      }}
-                      autoFocus
-                      className="flex-1"
-                    />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <Input
+                        value={draft}
+                        onChange={(e) => onDraftChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !savingEdit) onSaveEdit();
+                          if (e.key === 'Escape') onCancelEdit();
+                        }}
+                        autoFocus
+                      />
+                      {categories.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs text-muted-foreground flex-shrink-0">分类：</span>
+                          <button
+                            type="button"
+                            onClick={() => onCategoryChange(todo.id, null)}
+                            className={`text-xs rounded-full px-2.5 py-0.5 border transition-colors ${
+                              !todo.category
+                                ? 'border-primary text-primary bg-primary/10 font-medium'
+                                : 'border-border text-muted-foreground hover:border-foreground/30'
+                            }`}
+                          >
+                            无
+                          </button>
+                          {categories.map((cat) => (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => onCategoryChange(todo.id, cat.id)}
+                              className={`text-xs rounded-full px-2.5 py-0.5 border transition-colors ${
+                                todo.category?.id === cat.id
+                                  ? 'border-primary text-primary bg-primary/10 font-medium'
+                                  : 'border-border text-muted-foreground hover:border-foreground/30'
+                              }`}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span
                       className={`flex-1 text-sm ${todo.is_done ? 'line-through text-muted-foreground' : ''}`}

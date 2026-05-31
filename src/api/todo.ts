@@ -28,7 +28,7 @@ export const todoApi = {
     return http.post<Todo>('/api/todos', fd).then((r) => r.data);
   },
 
-  update: (id: number, data: { content?: string; is_done?: boolean }) =>
+  update: (id: number, data: { content?: string; is_done?: boolean; category_id?: number | null }) =>
     http.patch<Todo>(`/api/todos/${id}`, data).then((r) => r.data),
 
   remove: (id: number) => http.delete(`/api/todos/${id}`),
