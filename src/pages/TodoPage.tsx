@@ -552,8 +552,8 @@ function TodoList({
           return (
             <Card key={todo.id} className={todo.is_done ? 'bg-muted/40' : undefined}>
               <CardContent className="pt-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
                     {busy ? (
                       <Spinner className="h-4 w-4 text-muted-foreground" />
                     ) : (
