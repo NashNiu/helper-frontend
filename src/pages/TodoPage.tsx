@@ -152,7 +152,7 @@ export default function TodoPage() {
       const updated = await todoCategoryApi.rename(id, renameDraft.trim());
       setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
       setTodos((prev) =>
-        prev.map((t) => (t.category?.id === id ? { ...t, category: updated } : t)),
+        prev.map((t) => (t.category?.id === id ? { ...t, category: updated } : t))
       );
       setRenamingCategoryId(null);
       setRenameDraft('');
@@ -381,7 +381,7 @@ export default function TodoPage() {
                           ×
                         </button>
                       </span>
-                    ),
+                    )
                   )}
                   {categories.length === 0 && (
                     <span className="text-xs text-muted-foreground">暂无分类</span>
@@ -551,9 +551,9 @@ function TodoList({
           const isEditing = editingId === todo.id;
           return (
             <Card key={todo.id} className={todo.is_done ? 'bg-muted/40' : undefined}>
-              <CardContent className="pt-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex-shrink-0 w-4 h-4 flex items-center justify-center">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
                     {busy ? (
                       <Spinner className="h-4 w-4 text-muted-foreground" />
                     ) : (
@@ -578,7 +578,9 @@ function TodoList({
                       />
                       {categories.length > 0 && (
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs text-muted-foreground flex-shrink-0">分类：</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            分类：
+                          </span>
                           <button
                             type="button"
                             onClick={() => onCategoryChange(todo.id, null)}
@@ -614,7 +616,8 @@ function TodoList({
                       {todo.content}
                     </span>
                   )}
-                  {!isEditing && todo.category &&
+                  {!isEditing &&
+                    todo.category &&
                     (() => {
                       const color = getCategoryColor(todo.category.id);
                       return (
