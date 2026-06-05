@@ -3,6 +3,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { PhotoIcon } from '@heroicons/react/24/outline';
 import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
+import ImageLightbox from '../components/ImageLightbox';
 import type { Todo } from '../api/todo';
 import { getErrorMessage } from '../api/http';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,6 +38,7 @@ export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState('');
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [pendingLightboxIndex, setPendingLightboxIndex] = useState<number | null>(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [operatingIds, setOperatingIds] = useState<Set<number>>(new Set());
@@ -112,6 +114,7 @@ export default function TodoPage() {
   const clearPendingImages = () => {
     pendingImages.forEach((p) => URL.revokeObjectURL(p.url));
     setPendingImages([]);
+    setPendingLightboxIndex(null);
   };
 
   useEffect(() => {
@@ -331,19 +334,35 @@ export default function TodoPage() {
             {pendingImages.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {pendingImages.map((img, i) => (
-                  <div key={img.url} className="relative w-16 h-16 flex-shrink-0">
-                    <img
-                      src={img.url}
-                      alt={`待上传图片 ${i + 1}`}
-                      className="w-16 h-16 object-cover rounded border border-border"
-                    />
+                  <div key={img.url} className="relative group w-16 h-16 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPendingLightboxIndex(i)}
+                      className="block w-16 h-16"
+                      aria-label={`查看待上传图片 ${i + 1}`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`待上传图片 ${i + 1}`}
+                        className="w-16 h-16 object-cover rounded-lg border hover:opacity-90"
+                      />
+                    </button>
                     <button
                       type="button"
                       onClick={() => removePendingImage(i)}
                       aria-label={`移除待上传图片 ${i + 1}`}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs leading-none shadow hover:opacity-90 transition-opacity"
+                      className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-red-500 text-white rounded-full w-3.5 h-3.5 hidden group-hover:flex items-center justify-center focus:flex"
                     >
-                      ×
+                      <svg
+                        viewBox="0 0 10 10"
+                        className="w-2 h-2"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <line x1="2" y1="2" x2="8" y2="8" />
+                        <line x1="8" y1="2" x2="2" y2="8" />
+                      </svg>
                     </button>
                   </div>
                 ))}
@@ -575,6 +594,12 @@ export default function TodoPage() {
         )}
       </div>
       {dialog}
+      <ImageLightbox
+        sources={pendingImages.map((p) => p.url)}
+        index={pendingLightboxIndex}
+        onClose={() => setPendingLightboxIndex(null)}
+        onNavigate={setPendingLightboxIndex}
+      />
     </div>
   );
 }
