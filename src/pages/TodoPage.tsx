@@ -92,32 +92,26 @@ export default function TodoPage() {
 
   const addPendingFiles = (files: File[]) => {
     if (files.length === 0) return;
-    setError('');
-    setPendingImages((prev) => {
-      const room = MAX_IMAGES - prev.length;
-      if (room <= 0) {
-        setError('最多上传 9 张图片');
-        return prev;
-      }
-      const accepted = files.slice(0, room);
-      if (files.length > room) setError('最多上传 9 张图片，部分图片未添加');
-      return [...prev, ...accepted.map((file) => ({ file, url: URL.createObjectURL(file) }))];
-    });
+    const room = MAX_IMAGES - pendingImages.length;
+    if (room <= 0) {
+      setError(`最多上传 ${MAX_IMAGES} 张图片`);
+      return;
+    }
+    setError(files.length > room ? `最多上传 ${MAX_IMAGES} 张图片，部分图片未添加` : '');
+    const accepted = files.slice(0, room);
+    const additions = accepted.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setPendingImages((prev) => [...prev, ...additions]);
   };
 
   const removePendingImage = (index: number) => {
-    setPendingImages((prev) => {
-      const target = prev[index];
-      if (target) URL.revokeObjectURL(target.url);
-      return prev.filter((_, i) => i !== index);
-    });
+    const target = pendingImages[index];
+    if (target) URL.revokeObjectURL(target.url);
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearPendingImages = () => {
-    setPendingImages((prev) => {
-      prev.forEach((p) => URL.revokeObjectURL(p.url));
-      return [];
-    });
+    pendingImages.forEach((p) => URL.revokeObjectURL(p.url));
+    setPendingImages([]);
   };
 
   useEffect(() => {
@@ -140,10 +134,12 @@ export default function TodoPage() {
     };
   }, []);
 
+  // 同步最新的 pendingImages 到 ref,使下面空依赖的卸载清理能 revoke 最新值而非闭包里的陈旧值。
   useEffect(() => {
     pendingImagesRef.current = pendingImages;
   }, [pendingImages]);
 
+  // 仅在组件卸载时执行:通过 ref 读取最新的 pendingImages 来 revoke,避免空依赖闭包捕获到陈旧值。
   useEffect(() => {
     return () => {
       pendingImagesRef.current.forEach((p) => URL.revokeObjectURL(p.url));
