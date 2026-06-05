@@ -13,6 +13,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { todoCategoryApi } from '../api/todoCategory';
 import type { TodoCategory } from '../api/todoCategory';
 
+const MAX_IMAGES = 9;
+
+interface PendingImage {
+  file: File;
+  url: string; // 由 URL.createObjectURL(file) 生成,用于缩略图预览
+}
+
 const CATEGORY_COLORS = [
   { bg: 'bg-blue-50 dark:bg-blue-950', text: 'text-blue-600 dark:text-blue-400' },
   { bg: 'bg-emerald-50 dark:bg-emerald-950', text: 'text-emerald-600 dark:text-emerald-400' },
@@ -29,7 +36,7 @@ function getCategoryColor(id: number) {
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState('');
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [operatingIds, setOperatingIds] = useState<Set<number>>(new Set());
@@ -72,6 +79,7 @@ export default function TodoPage() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingImagesRef = useRef<PendingImage[]>([]);
   const { confirm, dialog } = useConfirm();
 
   const addOp = (id: number) => setOperatingIds((prev) => new Set(prev).add(id));
@@ -81,6 +89,36 @@ export default function TodoPage() {
       s.delete(id);
       return s;
     });
+
+  const addPendingFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    setError('');
+    setPendingImages((prev) => {
+      const room = MAX_IMAGES - prev.length;
+      if (room <= 0) {
+        setError('最多上传 9 张图片');
+        return prev;
+      }
+      const accepted = files.slice(0, room);
+      if (files.length > room) setError('最多上传 9 张图片，部分图片未添加');
+      return [...prev, ...accepted.map((file) => ({ file, url: URL.createObjectURL(file) }))];
+    });
+  };
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => {
+      const target = prev[index];
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const clearPendingImages = () => {
+    setPendingImages((prev) => {
+      prev.forEach((p) => URL.revokeObjectURL(p.url));
+      return [];
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -102,15 +140,29 @@ export default function TodoPage() {
     };
   }, []);
 
+  useEffect(() => {
+    pendingImagesRef.current = pendingImages;
+  }, [pendingImages]);
+
+  useEffect(() => {
+    return () => {
+      pendingImagesRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, []);
+
   const handleCreate = async () => {
     if (!content.trim()) return;
     setError('');
     setCreating(true);
     try {
-      const todo = await todoApi.create(content, pendingFiles, selectedCategoryId ?? undefined);
+      const todo = await todoApi.create(
+        content,
+        pendingImages.map((p) => p.file),
+        selectedCategoryId ?? undefined,
+      );
       setTodos((prev) => [todo, ...prev]);
       setContent('');
-      setPendingFiles([]);
+      clearPendingImages();
       setSelectedCategoryId(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
@@ -118,6 +170,16 @@ export default function TodoPage() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const imageFiles = Array.from(e.clipboardData.items)
+      .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+      .map((it) => it.getAsFile())
+      .filter((f): f is File => f !== null);
+    if (imageFiles.length === 0) return; // 纯文本粘贴走默认行为
+    e.preventDefault();
+    addPendingFiles(imageFiles);
   };
 
   const handleCreateCategory = async () => {
@@ -236,6 +298,7 @@ export default function TodoPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
+                onPaste={handlePaste}
                 placeholder="添加待办..."
                 className="flex-1"
               />
@@ -247,9 +310,9 @@ export default function TodoPage() {
                 className="relative"
               >
                 <PhotoIcon className="w-4 h-4" />
-                {pendingFiles.length > 0 && (
+                {pendingImages.length > 0 && (
                   <span className="absolute -top-1 -right-1 text-[10px] bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                    {pendingFiles.length}
+                    {pendingImages.length}
                   </span>
                 )}
               </Button>
@@ -264,13 +327,28 @@ export default function TodoPage() {
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => setPendingFiles(Array.from(e.target.files ?? []))}
+              onChange={(e) => {
+                addPendingFiles(Array.from(e.target.files ?? []));
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
             />
-            {pendingFiles.length > 0 && (
+            {pendingImages.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {pendingFiles.map((f, i) => (
-                  <div key={i} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                    {f.name}
+                {pendingImages.map((img, i) => (
+                  <div key={img.url} className="relative w-16 h-16 flex-shrink-0">
+                    <img
+                      src={img.url}
+                      alt={`待上传图片 ${i + 1}`}
+                      className="w-16 h-16 object-cover rounded border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePendingImage(i)}
+                      aria-label={`移除待上传图片 ${i + 1}`}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs leading-none shadow hover:opacity-90 transition-opacity"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
