@@ -3,6 +3,7 @@ import { useConfirm } from '../hooks/useConfirm';
 import { PhotoIcon } from '@heroicons/react/24/outline';
 import { todoApi } from '../api/todo';
 import ImageGallery from '../components/ImageGallery';
+import ImageLightbox from '../components/ImageLightbox';
 import type { Todo } from '../api/todo';
 import { getErrorMessage } from '../api/http';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +13,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { todoCategoryApi } from '../api/todoCategory';
 import type { TodoCategory } from '../api/todoCategory';
+
+const MAX_IMAGES = 9;
+
+interface PendingImage {
+  file: File;
+  url: string; // 由 URL.createObjectURL(file) 生成,用于缩略图预览
+}
 
 const CATEGORY_COLORS = [
   { bg: 'bg-blue-50 dark:bg-blue-950', text: 'text-blue-600 dark:text-blue-400' },
@@ -29,7 +37,8 @@ function getCategoryColor(id: number) {
 export default function TodoPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState('');
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [pendingLightboxIndex, setPendingLightboxIndex] = useState<number | null>(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [operatingIds, setOperatingIds] = useState<Set<number>>(new Set());
@@ -72,6 +81,7 @@ export default function TodoPage() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingImagesRef = useRef<PendingImage[]>([]);
   const { confirm, dialog } = useConfirm();
 
   const addOp = (id: number) => setOperatingIds((prev) => new Set(prev).add(id));
@@ -81,6 +91,31 @@ export default function TodoPage() {
       s.delete(id);
       return s;
     });
+
+  const addPendingFiles = (files: File[]) => {
+    if (files.length === 0) return;
+    const room = MAX_IMAGES - pendingImages.length;
+    if (room <= 0) {
+      setError(`最多上传 ${MAX_IMAGES} 张图片`);
+      return;
+    }
+    setError(files.length > room ? `最多上传 ${MAX_IMAGES} 张图片，部分图片未添加` : '');
+    const accepted = files.slice(0, room);
+    const additions = accepted.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setPendingImages((prev) => [...prev, ...additions]);
+  };
+
+  const removePendingImage = (index: number) => {
+    const target = pendingImages[index];
+    if (target) URL.revokeObjectURL(target.url);
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearPendingImages = () => {
+    pendingImages.forEach((p) => URL.revokeObjectURL(p.url));
+    setPendingImages([]);
+    setPendingLightboxIndex(null);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -102,15 +137,31 @@ export default function TodoPage() {
     };
   }, []);
 
+  // 同步最新的 pendingImages 到 ref,使下面空依赖的卸载清理能 revoke 最新值而非闭包里的陈旧值。
+  useEffect(() => {
+    pendingImagesRef.current = pendingImages;
+  }, [pendingImages]);
+
+  // 仅在组件卸载时执行:通过 ref 读取最新的 pendingImages 来 revoke,避免空依赖闭包捕获到陈旧值。
+  useEffect(() => {
+    return () => {
+      pendingImagesRef.current.forEach((p) => URL.revokeObjectURL(p.url));
+    };
+  }, []);
+
   const handleCreate = async () => {
     if (!content.trim()) return;
     setError('');
     setCreating(true);
     try {
-      const todo = await todoApi.create(content, pendingFiles, selectedCategoryId ?? undefined);
+      const todo = await todoApi.create(
+        content,
+        pendingImages.map((p) => p.file),
+        selectedCategoryId ?? undefined,
+      );
       setTodos((prev) => [todo, ...prev]);
       setContent('');
-      setPendingFiles([]);
+      clearPendingImages();
       setSelectedCategoryId(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
@@ -118,6 +169,16 @@ export default function TodoPage() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const imageFiles = Array.from(e.clipboardData.items)
+      .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+      .map((it) => it.getAsFile())
+      .filter((f): f is File => f !== null);
+    if (imageFiles.length === 0) return; // 纯文本粘贴走默认行为
+    e.preventDefault();
+    addPendingFiles(imageFiles);
   };
 
   const handleCreateCategory = async () => {
@@ -236,6 +297,7 @@ export default function TodoPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !creating && handleCreate()}
+                onPaste={handlePaste}
                 placeholder="添加待办..."
                 className="flex-1"
               />
@@ -247,9 +309,9 @@ export default function TodoPage() {
                 className="relative"
               >
                 <PhotoIcon className="w-4 h-4" />
-                {pendingFiles.length > 0 && (
+                {pendingImages.length > 0 && (
                   <span className="absolute -top-1 -right-1 text-[10px] bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                    {pendingFiles.length}
+                    {pendingImages.length}
                   </span>
                 )}
               </Button>
@@ -264,13 +326,44 @@ export default function TodoPage() {
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => setPendingFiles(Array.from(e.target.files ?? []))}
+              onChange={(e) => {
+                addPendingFiles(Array.from(e.target.files ?? []));
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
             />
-            {pendingFiles.length > 0 && (
+            {pendingImages.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {pendingFiles.map((f, i) => (
-                  <div key={i} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                    {f.name}
+                {pendingImages.map((img, i) => (
+                  <div key={img.url} className="relative group w-16 h-16 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPendingLightboxIndex(i)}
+                      className="block w-16 h-16"
+                      aria-label={`查看待上传图片 ${i + 1}`}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`待上传图片 ${i + 1}`}
+                        className="w-16 h-16 object-cover rounded-lg border hover:opacity-90"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removePendingImage(i)}
+                      aria-label={`移除待上传图片 ${i + 1}`}
+                      className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-red-500/80 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-80 transition-all hover:bg-red-600 hover:opacity-100 hover:scale-125"
+                    >
+                      <svg
+                        viewBox="0 0 10 10"
+                        className="w-2 h-2"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <line x1="2" y1="2" x2="8" y2="8" />
+                        <line x1="8" y1="2" x2="2" y2="8" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -501,6 +594,12 @@ export default function TodoPage() {
         )}
       </div>
       {dialog}
+      <ImageLightbox
+        sources={pendingImages.map((p) => p.url)}
+        index={pendingLightboxIndex}
+        onClose={() => setPendingLightboxIndex(null)}
+        onNavigate={setPendingLightboxIndex}
+      />
     </div>
   );
 }
