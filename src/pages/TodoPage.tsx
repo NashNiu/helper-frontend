@@ -351,7 +351,7 @@ export default function TodoPage() {
                       type="button"
                       onClick={() => removePendingImage(i)}
                       aria-label={`移除待上传图片 ${i + 1}`}
-                      className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-red-500 text-white rounded-full w-3.5 h-3.5 hidden group-hover:flex items-center justify-center focus:flex"
+                      className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-red-500/80 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-80 transition-all hover:bg-red-600 hover:opacity-100 hover:scale-125"
                     >
                       <svg
                         viewBox="0 0 10 10"
