@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { financeApi } from '../api/finance';
-import type { ParsedFinanceDraft, FinanceRecord } from '../api/finance';
+import type { ParsedFinanceDraft, FinanceRecord, FromImageRecordInput } from '../api/finance';
 import type { CategoryTree } from '../api/category';
 import { getErrorMessage } from '../api/http';
 import {
@@ -93,7 +93,7 @@ export default function FinanceImagePreviewModal({
       setError('没有要保存的记录');
       return;
     }
-    const payload = [];
+    const payload: FromImageRecordInput[] = [];
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       const abs = Number(r.absAmount);

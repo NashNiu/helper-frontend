@@ -559,6 +559,7 @@ export default function FinancePage() {
         onSaved={handleSaved}
       />
       <FinanceImagePreviewModal
+        key={previewFile ? `${previewFile.name}:${previewFile.size}:${previewFile.lastModified}` : 'none'}
         file={previewFile}
         drafts={previewDrafts}
         categories={categories}
