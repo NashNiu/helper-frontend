@@ -15,6 +15,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { Spinner } from '@/components/ui/spinner';
+import { PhotoIcon } from '@heroicons/react/24/outline';
+import FinanceImagePreviewModal from '../components/FinanceImagePreviewModal';
+import ImageLightbox from '../components/ImageLightbox';
+import type { ParsedFinanceDraft } from '../api/finance';
 
 type Range = 'today' | 'week' | 'month' | 'year' | 'custom';
 
@@ -103,6 +107,11 @@ export default function FinancePage() {
   const [categories, setCategories] = useState<CategoryTree[]>([]);
   const [editing, setEditing] = useState<FinanceRecord | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewDrafts, setPreviewDrafts] = useState<ParsedFinanceDraft[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [listLightbox, setListLightbox] = useState<string | null>(null);
 
   const doLoad = useCallback(async (from: number, to: number) => {
     setError('');
@@ -212,6 +221,32 @@ export default function FinancePage() {
     }
   };
 
+  const handlePickImage = async (file: File) => {
+    setError('');
+    setParsing(true);
+    try {
+      const res = await financeApi.parseImage(file);
+      if (!res.relevant || res.records.length === 0) {
+        setNewCatToast(res.message ?? '这张图片不像账单，已忽略');
+        toastTimerRef.current = setTimeout(() => setNewCatToast(null), 4000);
+        return;
+      }
+      setPreviewFile(file);
+      setPreviewDrafts(res.records);
+    } catch (err) {
+      setError(getErrorMessage(err, '识别失败，请重试'));
+    } finally {
+      setParsing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImageSaved = async () => {
+    setPreviewFile(null);
+    setPreviewDrafts([]);
+    await loadCurrentRange(range, customFrom, customTo, weekOffset, monthOffset, yearOffset);
+  };
+
   const handleDelete = async (id: number) => {
     if (!(await confirm('确认删除这条记录？'))) return;
     setError('');
@@ -267,11 +302,31 @@ export default function FinancePage() {
                   placeholder="例：午饭吃了快餐，花了15"
                   className="flex-1"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={parsing}
+                  aria-label="上传账单图片"
+                >
+                  {parsing ? <Spinner className="h-4 w-4" /> : <PhotoIcon className="w-4 h-4" />}
+                </Button>
                 <Button onClick={handleCreate} disabled={loading}>
                   {loading ? <Spinner className="h-4 w-4 mr-1" /> : null}
                   {loading ? '解析中…' : '记录'}
                 </Button>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePickImage(f);
+                }}
+              />
             </CardContent>
           </Card>
 
@@ -440,6 +495,20 @@ export default function FinancePage() {
                           {r.note || r.raw_input}
                         </p>
                       </div>
+                      {r.image_path && (
+                        <button
+                          type="button"
+                          onClick={() => setListLightbox(r.image_path)}
+                          className="flex-shrink-0"
+                          aria-label="查看账单图片"
+                        >
+                          <img
+                            src={r.image_path}
+                            alt="账单"
+                            className="w-10 h-10 object-cover rounded border hover:opacity-90"
+                          />
+                        </button>
+                      )}
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {dayjs(r.happened_at).format('YYYY/MM/DD HH:mm')}
@@ -488,6 +557,22 @@ export default function FinancePage() {
         categories={categories}
         onClose={() => setEditing(null)}
         onSaved={handleSaved}
+      />
+      <FinanceImagePreviewModal
+        file={previewFile}
+        drafts={previewDrafts}
+        categories={categories}
+        onClose={() => {
+          setPreviewFile(null);
+          setPreviewDrafts([]);
+        }}
+        onSaved={handleImageSaved}
+      />
+      <ImageLightbox
+        sources={listLightbox ? [listLightbox] : []}
+        index={listLightbox ? 0 : null}
+        onClose={() => setListLightbox(null)}
+        onNavigate={() => {}}
       />
       {dialog}
     </>
