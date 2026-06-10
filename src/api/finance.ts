@@ -19,6 +19,23 @@ export interface FinanceRecord {
   note: string | null;
   happened_at: string;
   created_at: string;
+  image_path: string | null;
+}
+
+export interface ParsedFinanceDraft {
+  category: string;
+  sub_category: string;
+  amount: number;
+  note: string | null;
+  happened_at: string;
+  suggested_category_id: number;
+}
+
+export interface FromImageRecordInput {
+  category_id: number;
+  amount: number;
+  note: string | null;
+  happened_at: string;
 }
 
 export const financeApi = {
@@ -38,4 +55,24 @@ export const financeApi = {
     }
   ) => http.patch<FinanceRecord>(`/api/finance/${id}`, data).then((r) => r.data),
   remove: (id: number) => http.delete(`/api/finance/${id}`),
+
+  parseImage: (file: File) => {
+    const fd = new FormData();
+    fd.append('image', file);
+    return http
+      .post<{ relevant: boolean; message?: string; records: ParsedFinanceDraft[] }>(
+        '/api/finance/parse-image',
+        fd
+      )
+      .then((r) => r.data);
+  },
+
+  createFromImage: (file: File, records: FromImageRecordInput[]) => {
+    const fd = new FormData();
+    fd.append('image', file);
+    fd.append('records', JSON.stringify(records));
+    return http
+      .post<{ records: FinanceRecord[] }>('/api/finance/from-image', fd)
+      .then((r) => r.data);
+  },
 };
