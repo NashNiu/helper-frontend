@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { financeApi } from '../api/finance';
 import type { ParsedFinanceDraft, FinanceRecord, FromImageRecordInput } from '../api/finance';
@@ -75,12 +75,18 @@ export default function FinanceImagePreviewModal({
   const [error, setError] = useState('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const imageUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file]);
+  // 在同一个 effect 内创建并释放对象 URL:StrictMode 下 effect 会 setup→cleanup→setup,
+  // 这样 cleanup 释放的正是自己创建的那个 URL,重建后用新 URL,避免 img 指向已释放的 URL(裂图)。
+  const [imageUrl, setImageUrl] = useState('');
   useEffect(() => {
-    return () => {
-      if (imageUrl) URL.revokeObjectURL(imageUrl);
-    };
-  }, [imageUrl]);
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    // 同一 effect 内建/销对象 URL 是 StrictMode 安全的标准写法(cleanup 销毁的正是本次创建的 URL);
+    // 此处 setState 是该模式的必要部分,故局部关闭 set-state-in-effect 规则。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setImageUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   if (!file) return null;
 
@@ -140,18 +146,20 @@ export default function FinanceImagePreviewModal({
           <DialogTitle>确认账单识别结果</DialogTitle>
         </DialogHeader>
 
-        <button
-          type="button"
-          onClick={() => setLightboxOpen(true)}
-          className="block"
-          aria-label="查看账单原图"
-        >
-          <img
-            src={imageUrl}
-            alt="账单"
-            className="h-24 rounded border object-cover hover:opacity-90"
-          />
-        </button>
+        {imageUrl && (
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            className="block"
+            aria-label="查看账单原图"
+          >
+            <img
+              src={imageUrl}
+              alt="账单"
+              className="h-24 rounded border object-cover hover:opacity-90"
+            />
+          </button>
+        )}
 
         <div className="space-y-4 py-2">
           {rows.length === 0 && (
