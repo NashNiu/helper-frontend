@@ -241,6 +241,17 @@ export default function FinancePage() {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    if (parsing) return;
+    const imageFile = Array.from(e.clipboardData.items)
+      .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+      .map((it) => it.getAsFile())
+      .find((f): f is File => f !== null);
+    if (!imageFile) return; // 纯文本粘贴走默认行为
+    e.preventDefault();
+    handlePickImage(imageFile); // 账单一次一张,取第一张,走与上传按钮相同的识别流程
+  };
+
   const handleImageSaved = async () => {
     setPreviewFile(null);
     setPreviewDrafts([]);
@@ -299,7 +310,8 @@ export default function FinancePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && !loading && handleCreate()}
-                  placeholder="例：午饭吃了快餐，花了15"
+                  onPaste={handlePaste}
+                  placeholder="例：午饭吃了快餐，花了15（也可粘贴账单截图）"
                   className="flex-1"
                 />
                 <Button
