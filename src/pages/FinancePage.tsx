@@ -15,7 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { Spinner } from '@/components/ui/spinner';
-import { PhotoIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import FinanceImagePreviewModal from '../components/FinanceImagePreviewModal';
 import ImageLightbox from '../components/ImageLightbox';
 import type { ParsedFinanceDraft } from '../api/finance';
@@ -112,6 +112,8 @@ export default function FinancePage() {
   const [previewDrafts, setPreviewDrafts] = useState<ParsedFinanceDraft[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [listLightbox, setListLightbox] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const doLoad = useCallback(async (from: number, to: number) => {
     setError('');
@@ -294,9 +296,13 @@ export default function FinancePage() {
 
   return (
     <>
-      <div className="h-full flex flex-col gap-6">
-        {/* fixed: title + input + filters */}
-        <div className="flex-shrink-0 space-y-6">
+      <div
+        ref={scrollRef}
+        onScroll={(e) => setShowBackToTop(e.currentTarget.scrollTop > 300)}
+        className="h-full overflow-y-auto space-y-6 pb-4"
+      >
+        {/* title + input + filters (now scrolls with the rest) */}
+        <div className="space-y-6">
           <h1 className="text-2xl font-semibold text-foreground">收支记录</h1>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           {newCatToast && (
@@ -432,8 +438,8 @@ export default function FinancePage() {
           </div>
         </div>
 
-        {/* scrollable: chart + list */}
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 pb-4">
+        {/* chart + list */}
+        <div className="space-y-6">
           {showChart && (
             <FinanceCharts
               records={records}
@@ -561,6 +567,17 @@ export default function FinancePage() {
           )}
         </div>
       </div>
+
+      {showBackToTop && (
+        <button
+          type="button"
+          aria-label="回到顶部"
+          onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-20 right-6 z-40 w-11 h-11 rounded-full bg-card border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:shadow-xl transition-all"
+        >
+          <ArrowUpIcon className="w-5 h-5" />
+        </button>
+      )}
 
       <CategoryModal open={showCategoryModal} onClose={() => setShowCategoryModal(false)} />
       <EditFinanceModal
