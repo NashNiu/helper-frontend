@@ -120,10 +120,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
     .map(([name, total]) => {
       const items = expenses
         .filter((r) => getPrimaryName(r) === name)
-        .sort(
-          (a, b) =>
-            new Date(b.happened_at).getTime() - new Date(a.happened_at).getTime(),
-        );
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
       return {
         name,
         total,
