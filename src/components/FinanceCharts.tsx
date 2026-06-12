@@ -270,6 +270,7 @@ export default function FinanceCharts({ records, onDayClick, onCategorySelect }:
                 <div key={row.name}>
                   <button
                     type="button"
+                    aria-expanded={expanded}
                     onClick={() =>
                       setExpandedCategory((cur) => (cur === row.name ? null : row.name))
                     }
